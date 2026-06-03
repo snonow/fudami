@@ -3,10 +3,10 @@
 # dependencies
 node_modules/
 
-# Expo
-.expo/
-dist/
-web-build/
+# AI/Agent config files
+CLAUDE.md
+AGENTS.md
+.claude/
 expo-env.d.ts
 
 # Native
