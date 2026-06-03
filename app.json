@@ -1,0 +1,35 @@
+{
+  "expo": {
+    "name": "Fudami",
+    "slug": "fudami",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "scheme": "fudami",
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.snonow.fudami"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#0A0B1E",
+        "foregroundImage": "./assets/android-icon-foreground.png"
+      },
+      "package": "com.snonow.fudami"
+    },
+    "web": {
+      "bundler": "metro",
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-sqlite",
+      "expo-router",
+      "expo-font",
+      "expo-status-bar"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}
