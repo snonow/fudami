@@ -1,6 +1,6 @@
-# Fudami (フダミ)
+# fudami (ふだみ)
 
-Fudami is a modern, cross-platform language learning application built with React Native and Expo. It leverages the FSRS (Free Spaced Repetition Scheduler) algorithm to optimize memory retention, currently focusing on Japanese vocabulary.
+fudami is a modern, cross-platform language learning application built with React Native and Expo. It leverages the FSRS (Free Spaced Repetition Scheduler) algorithm to optimize memory retention, currently focusing on Japanese vocabulary.
 
 ## Features
 
