@@ -14,8 +14,8 @@
     "expo-router": "~56.2.8",
     "expo-sqlite": "~56.0.4",
     "expo-status-bar": "~56.0.4",
-    "react": "19.2.3",
-    "react-dom": "19.2.3",
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3",
     "react-native": "^0.85.3",
     "react-native-reanimated": "4.3.1",
     "react-native-safe-area-context": "~5.7.0",
@@ -34,9 +34,9 @@
     "babel-preset-expo": "^56.0.14",
     "jest": "^29.7.0",
     "jest-expo": "^56.0.4",
-    "react-test-renderer": "^19.2.7",
+    "react-test-renderer": "^19.2.3",
     "ts-jest": "^29.2.5",
-    "typescript": "~6.0.3"
+    "typescript": "~5.7.3"
   },
   "scripts": {
     "start": "NODE_OPTIONS=\"--no-strip-types\" expo start",
