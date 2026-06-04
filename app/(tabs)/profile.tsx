@@ -1,12 +1,32 @@
-import React from 'react';
-import { View, Text, StyleSheet, SafeAreaView, ScrollView, Switch } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, SafeAreaView, ScrollView, Switch, Alert, ActivityIndicator } from 'react-native';
 import { Colors } from '../../constants/Colors';
 import { StatCard } from '../../components/cards/StatCard';
+import { Button } from '../../components/ui/Button';
 import { useAppStore } from '../../store/useAppStore';
 import { MOCK_USER_STATS } from '../../constants/MockData';
+import { ankiImporter } from '../../engine/AnkiImporter';
 
 export default function ProfileScreen() {
   const { user, session } = useAppStore();
+  const [isImporting, setIsImporting] = useState(false);
+
+  const handleAnkiImport = async () => {
+    setIsImporting(true);
+    try {
+      const result = await ankiImporter.importDeck();
+      if (result) {
+        Alert.alert(
+          'Import Réussi !',
+          `Le deck "${result.deckName}" a été importé avec ${result.cardCount} cartes et ${result.mediaCount} fichiers média.`
+        );
+      }
+    } catch (error) {
+      Alert.alert('Erreur d\'import', 'Impossible d\'importer le deck Anki. Vérifiez que le fichier est un .apkg valide.');
+    } finally {
+      setIsImporting(false);
+    }
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -52,6 +72,24 @@ export default function ProfileScreen() {
               iconColor={Colors.success} 
             />
           </View>
+        </View>
+
+        {/* Actions */}
+        <Text style={styles.sectionTitle}>Actions</Text>
+        <View style={styles.settingsCard}>
+          {isImporting ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color={Colors.primary} />
+              <Text style={styles.loadingText}>Importation du deck Anki...</Text>
+            </View>
+          ) : (
+            <Button 
+              title="Importer un deck Anki (.apkg)" 
+              variant="outline"
+              onPress={handleAnkiImport}
+              style={styles.importBtn}
+            />
+          )}
         </View>
 
         {/* Settings */}
@@ -144,12 +182,13 @@ const styles = StyleSheet.create({
   statsRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    gap: 12, // Requires RN 0.71+, but we fallback to margins in the StatCard if needed
+    gap: 12,
   },
   settingsCard: {
     backgroundColor: Colors.surface,
     borderRadius: 20,
     padding: 20,
+    marginBottom: 10,
   },
   settingRow: {
     flexDirection: 'row',
@@ -184,5 +223,17 @@ const styles = StyleSheet.create({
     color: Colors.primary,
     fontSize: 18,
     fontWeight: 'bold',
+  },
+  importBtn: {
+    width: '100%',
+  },
+  loadingContainer: {
+    alignItems: 'center',
+    paddingVertical: 10,
+  },
+  loadingText: {
+    color: Colors.textMuted,
+    marginTop: 10,
+    fontSize: 14,
   },
 });
