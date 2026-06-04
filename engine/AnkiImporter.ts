@@ -145,8 +145,33 @@ export class AnkiImporter {
       await fudamiDb.withTransactionAsync(async () => {
         for (const row of rows) {
           const fields = row.fields.split('\x1f');
-          const front = fields[0];
-          const back = fields[1] || '';
+          let frontKanji = '';
+          let frontKana = '';
+          let back = '';
+
+          // Smart Mapping for common deck structures
+          if (fields.length >= 4) {
+            // Likely [Level, Kana, Kanji, Meaning] like the sample deck
+            frontKana = fields[1];
+            frontKanji = fields[2] || fields[1];
+            back = fields[3];
+          } else if (fields.length === 3) {
+            // Likely [Kana, Kanji, Meaning]
+            frontKana = fields[0];
+            frontKanji = fields[1] || fields[0];
+            back = fields[2];
+          } else {
+            // Fallback [Front, Back]
+            frontKanji = fields[0];
+            back = fields[1] || '';
+          }
+
+          // Clean HTML tags if any
+          const clean = (text: string) => text.replace(/<[^>]*>?/gm, '').trim();
+          
+          const finalKanji = clean(frontKanji);
+          const finalKana = clean(frontKana);
+          const finalBack = clean(back);
           
           // Map Anki state to FSRSCard
           const fsrsCard = this.mapAnkiToFSRS(row, creationTime);
@@ -158,9 +183,9 @@ export class AnkiImporter {
             [
               `anki_${row.note_id}`,
               'vocab',
-              front,
-              '', // kana often embedded in fields or needs parsing
-              back,
+              finalKanji,
+              finalKana,
+              finalBack,
               'imported',
               JSON.stringify(fsrsCard),
               fsrsCard.due.toISOString(),
