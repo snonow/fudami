@@ -6,13 +6,22 @@ import { Button } from '../../components/ui/Button';
 import { ProgressBar } from '../../components/ui/ProgressBar';
 import { useAppStore } from '../../store/useAppStore';
 import { Ionicons } from '@expo/vector-icons';
-import { MOCK_USER_STATS } from '../../constants/MockData';
+import { MOCK_USER_STATS, DUMMY_CARDS } from '../../constants/MockData';
+import { PathManager } from '../../engine/PathManager';
+import { PathNode } from '../../components/gamification/PathNode';
 
 export default function HomeScreen() {
-  const { user, session } = useAppStore();
+  const { user, session, startSession } = useAppStore();
 
-  // Use mock data for display purposes
-  const { dailyProgress, cardsRemaining, cardsLearned, accuracy } = MOCK_USER_STATS;
+  // Automatically generate the path based on user progress
+  const path = PathManager.generatePath('JLPT N5', DUMMY_CARDS, user.completedLevels);
+
+  const handleStartLevel = (levelCardsIds: string[]) => {
+    // Map IDs back to full card objects
+    const levelCards = DUMMY_CARDS.filter(c => levelCardsIds.includes(c.id));
+    startSession(levelCards, 'cards', levelCards.length);
+    console.log('Starting level session');
+  };
 
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -76,19 +85,19 @@ export default function HomeScreen() {
           </View>
         </View>
 
-        {/* Call to Action */}
-        <View style={styles.ctaSection}>
-          <Text style={styles.sectionTitle}>Maîtrise le japonais</Text>
-          <Button 
-            title="Reprendre l'étude" 
-            onPress={() => console.log('Start session')} 
-            style={styles.mainButton}
-          />
-          <Button 
-            title="Explorer de nouvelles cartes" 
-            onPress={() => console.log('Explore')} 
-            variant="outline"
-          />
+        {/* Learning Path */}
+        <Text style={styles.sectionTitle}>Mon Parcours</Text>
+        <View style={styles.pathContainer}>
+          {path.map((level, index) => (
+            <PathNode 
+              key={level.id}
+              index={index}
+              level={level.title}
+              isCompleted={level.isCompleted}
+              isLocked={level.isLocked}
+              onPress={() => handleStartLevel(level.cardIds)}
+            />
+          ))}
         </View>
 
         {/* Quick Stats */}
@@ -205,8 +214,10 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     marginBottom: 16,
   },
-  mainButton: {
-    marginBottom: 12,
+  pathContainer: {
+    alignItems: 'center',
+    paddingVertical: 20,
+    marginBottom: 30,
   },
   quickStatsGrid: {
     flexDirection: 'row',

@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { View, Text, StyleSheet, Animated, TouchableWithoutFeedback } from 'react-native';
+import { View, Text, StyleSheet, Animated, Pressable, Platform } from 'react-native';
 import { Colors } from '../../constants/Colors';
 
 interface FlashcardProps {
@@ -18,7 +18,7 @@ export const Flashcard: React.FC<FlashcardProps> = ({ frontContent, backContent,
       toValue: isFlipped ? 1 : 0,
       friction: 8,
       tension: 10,
-      useNativeDriver: true,
+      useNativeDriver: Platform.OS !== 'web',
     }).start();
   }, [isFlipped, animatedValue]);
 
@@ -41,21 +41,19 @@ export const Flashcard: React.FC<FlashcardProps> = ({ frontContent, backContent,
   };
 
   return (
-    <TouchableWithoutFeedback onPress={onFlip}>
-      <View style={styles.container}>
-        {/* Front */}
-        <Animated.View style={[styles.card, frontAnimatedStyle]}>
-          <Text style={styles.cardText}>{frontContent}</Text>
-          <Text style={styles.hintText}>Appuyez pour retourner</Text>
-        </Animated.View>
+    <Pressable onPress={onFlip} style={styles.container}>
+      {/* Front */}
+      <Animated.View style={[styles.card, frontAnimatedStyle]}>
+        <Text style={styles.cardText}>{frontContent}</Text>
+        <Text style={styles.hintText}>Appuyez pour retourner</Text>
+      </Animated.View>
 
-        {/* Back */}
-        <Animated.View style={[styles.card, styles.cardBack, backAnimatedStyle]}>
-          <Text style={styles.cardText}>{backContent}</Text>
-          <Text style={styles.hintText}>Évaluez votre réponse ci-dessous</Text>
-        </Animated.View>
-      </View>
-    </TouchableWithoutFeedback>
+      {/* Back */}
+      <Animated.View style={[styles.card, styles.cardBack, backAnimatedStyle]}>
+        <Text style={styles.cardText}>{backContent}</Text>
+        <Text style={styles.hintText}>Évaluez votre réponse ci-dessous</Text>
+      </Animated.View>
+    </Pressable>
   );
 };
 

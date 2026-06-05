@@ -5,10 +5,36 @@ import { Flashcard } from '../../components/cards/Flashcard';
 import { Button } from '../../components/ui/Button';
 import { useAppStore } from '../../store/useAppStore';
 import { DUMMY_CARDS } from '../../constants/MockData';
+import { feedbackService } from '../../engine/FeedbackService';
 
 export default function ReviewScreen() {
   const { session, nextCard, addXP, startSession } = useAppStore();
   const [isFlipped, setIsFlipped] = useState(false);
+
+  const handleReveal = () => {
+    setIsFlipped(true);
+    feedbackService.playFlip();
+  };
+
+  const handleGrade = async (rating: 'again' | 'hard' | 'good' | 'easy') => {
+    // Satisfying feedback
+    if (rating === 'good' || rating === 'easy') {
+      await feedbackService.playSuccess();
+    } else if (rating === 'hard') {
+      await feedbackService.playWarning();
+    } else {
+      await feedbackService.playError();
+    }
+
+    const xpMap = { again: 0, hard: 5, good: 10, easy: 15 };
+    addXP(xpMap[rating]);
+    
+    setIsFlipped(false);
+    
+    setTimeout(() => {
+      nextCard();
+    }, 150);
+  };
 
   // Initialize session with dummy data if not active
   React.useEffect(() => {
@@ -18,20 +44,6 @@ export default function ReviewScreen() {
   }, [session.isActive, startSession]);
 
   const currentCard = session.cards[session.currentIndex];
-
-  const handleGrade = (rating: 'again' | 'hard' | 'good' | 'easy') => {
-    // In a real app, we'd pass this to FSRS engine. For now, just grant XP and move on.
-    const xpMap = { again: 0, hard: 5, good: 10, easy: 15 };
-    addXP(xpMap[rating]);
-    
-    // Reset flip state before next card
-    setIsFlipped(false);
-    
-    // Delay slightly to let the flip animation finish hiding the back before content changes
-    setTimeout(() => {
-      nextCard();
-    }, 150);
-  };
 
   if (!session.isActive || !currentCard) {
     return (
@@ -62,7 +74,7 @@ export default function ReviewScreen() {
           frontContent={currentCard.front} 
           backContent={currentCard.back}
           isFlipped={isFlipped}
-          onFlip={() => setIsFlipped(true)}
+          onFlip={handleReveal}
         />
       </View>
 
@@ -77,7 +89,7 @@ export default function ReviewScreen() {
         ) : (
           <Button 
             title="Afficher la réponse" 
-            onPress={() => setIsFlipped(true)} 
+            onPress={handleReveal} 
             style={styles.revealBtn}
           />
         )}

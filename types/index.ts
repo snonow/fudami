@@ -22,4 +22,13 @@ export interface UserState {
   level: number;
   streakDays: number;
   totalReviews: number;
+  completedLevels: string[]; // List of Level IDs
+}
+
+export interface PathLevel {
+  id: string;
+  title: string;
+  cardIds: string[];
+  isCompleted: boolean;
+  isLocked: boolean;
 }

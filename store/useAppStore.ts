@@ -29,6 +29,7 @@ export const useAppStore = create<AppState>((set) => ({
     level: 1,
     streakDays: 0,
     totalReviews: 0,
+    completedLevels: [],
   },
 
   startSession: (cards, goalType, goalValue) => set((state) => ({
@@ -42,6 +43,13 @@ export const useAppStore = create<AppState>((set) => ({
       goalValue,
       progress: 0,
       mode: getRandomMode(),
+    }
+  })),
+
+  completeLevel: (levelId: string) => set((state) => ({
+    user: {
+      ...state.user,
+      completedLevels: [...state.user.completedLevels, levelId],
     }
   })),
 
