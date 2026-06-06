@@ -1,39 +1,46 @@
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView, SafeAreaView } from 'react-native';
+import { useRouter } from 'expo-router';
 import { Colors } from '../../constants/Colors';
 import { StatCard } from '../../components/cards/StatCard';
-import { Button } from '../../components/ui/Button';
 import { ProgressBar } from '../../components/ui/ProgressBar';
+import { Button } from '../../components/ui/Button';
 import { useAppStore } from '../../store/useAppStore';
 import { Ionicons } from '@expo/vector-icons';
-import { MOCK_USER_STATS, DUMMY_CARDS } from '../../constants/MockData';
+import { DUMMY_CARDS } from '../../constants/MockData';
 import { PathManager } from '../../engine/PathManager';
 import { PathNode } from '../../components/gamification/PathNode';
+import { getXPForNextLevel } from '../../engine/gamification';
 
 export default function HomeScreen() {
-  const { user, session, startSession } = useAppStore();
+  const { user, session, loadSession } = useAppStore();
+  const router = useRouter();
 
-  // Automatically generate the path based on user progress
-  const path = PathManager.generatePath('JLPT N5', DUMMY_CARDS, user.completedLevels);
+  // Safely calculate progress
+  const xpTotal = user?.xpTotal ?? 0;
+  const { current, next } = getXPForNextLevel(xpTotal);
+  const levelProgress = next > current ? (xpTotal - current) / (next - current) : 1;
+  const currentLevel = user?.level ?? 1;
 
-  const handleStartLevel = (levelCardsIds: string[]) => {
-    // Map IDs back to full card objects
-    const levelCards = DUMMY_CARDS.filter(c => levelCardsIds.includes(c.id));
-    startSession(levelCards, 'cards', levelCards.length);
-    console.log('Starting level session');
+  // Use dummy cards for path generation if none available yet
+  const path = PathManager.generatePath('JLPT N5', DUMMY_CARDS, user?.completedLevels ?? []);
+
+  const handleStartSession = async () => {
+    await loadSession();
+    router.push('/(tabs)/review');
+  };
+
+  const handleStartLevel = async (levelCardIds: string[]) => {
+    const levelCards = DUMMY_CARDS.filter((c) => levelCardIds.includes(c.id));
+    useAppStore.getState().startSession(levelCards, 'cards', levelCards.length);
+    router.push('/(tabs)/review');
   };
 
   const getGreeting = () => {
-    const hour = new Date().getHours();
-    if (hour < 12) return 'Bonjour !';
-    if (hour < 18) return 'Bon après-midi !';
+    const h = new Date().getHours();
+    if (h < 12) return 'Bonjour !';
+    if (h < 18) return 'Bon après-midi !';
     return 'Bonsoir !';
-  };
-
-  const getMotivationMessage = () => {
-    if (dailyProgress === 0) return "C'est le moment de commencer !";
-    if (dailyProgress < 1) return "Tu y es presque, continue comme ça !";
-    return "Objectif atteint ! Félicitations !";
   };
 
   return (
@@ -46,50 +53,41 @@ export default function HomeScreen() {
             <Text style={styles.subtitle}>Prêt pour ta session ?</Text>
           </View>
           <View style={styles.levelBadge}>
-            <Text style={styles.levelText}>Lvl {user.level}</Text>
+            <Text style={styles.levelText}>Lvl {currentLevel}</Text>
           </View>
         </View>
 
         {/* Stats Row */}
         <View style={styles.statsRow}>
-          <StatCard 
-            label="Série" 
-            value={`${user.streakDays} j`} 
-            icon="flame" 
-            iconColor="#FF9800" 
-          />
-          <StatCard 
-            label="Total XP" 
-            value={user.xpTotal} 
-            icon="star" 
-            iconColor="#FFD600" 
-          />
+          <StatCard label="Série" value={`${user?.streakDays ?? 0} j`} icon="flame" iconColor="#FF9800" />
+          <StatCard label="Total XP" value={xpTotal} icon="star" iconColor="#FFD600" />
         </View>
 
-        {/* Daily Progress Card */}
+        {/* XP Progress Card */}
         <View style={styles.progressCard}>
           <View style={styles.progressHeader}>
-            <Text style={styles.progressTitle}>Objectif du jour</Text>
-            <Text style={styles.progressValue}>{Math.round(dailyProgress * 100)}%</Text>
+            <Text style={styles.progressTitle}>Progression niveau</Text>
+            <Text style={styles.progressValue}>Lvl {currentLevel}</Text>
           </View>
-          
-          <ProgressBar progress={dailyProgress} height={16} />
-          
+
+          <ProgressBar progress={levelProgress} height={12} />
+
           <Text style={styles.progressNote}>
-            {cardsRemaining} cartes restantes pour aujourd'hui
+            {xpTotal} / {next} XP
           </Text>
 
-          <View style={styles.motivationBox}>
-            <Ionicons name="sparkles" size={20} color={Colors.warning} />
-            <Text style={styles.motivationText}>{getMotivationMessage()}</Text>
-          </View>
+          <Button
+            title="Commencer une session"
+            onPress={handleStartSession}
+            style={{ marginTop: 20 }}
+          />
         </View>
 
         {/* Learning Path */}
         <Text style={styles.sectionTitle}>Mon Parcours</Text>
         <View style={styles.pathContainer}>
           {path.map((level, index) => (
-            <PathNode 
+            <PathNode
               key={level.id}
               index={index}
               level={level.title}
@@ -103,16 +101,16 @@ export default function HomeScreen() {
         {/* Quick Stats */}
         <View style={styles.quickStatsGrid}>
           <View style={styles.quickStatItem}>
-            <Text style={styles.quickStatValue}>{user.totalReviews}</Text>
+            <Text style={styles.quickStatValue}>{user?.totalReviews ?? 0}</Text>
             <Text style={styles.quickStatLabel}>Révisions</Text>
           </View>
           <View style={styles.quickStatItem}>
-            <Text style={styles.quickStatValue}>{accuracy}</Text>
-            <Text style={styles.quickStatLabel}>Précision</Text>
+            <Text style={styles.quickStatValue}>{user?.streakDays ?? 0}</Text>
+            <Text style={styles.quickStatLabel}>Jours de série</Text>
           </View>
           <View style={styles.quickStatItem}>
-            <Text style={styles.quickStatValue}>{cardsLearned}</Text>
-            <Text style={styles.quickStatLabel}>Appris</Text>
+            <Text style={styles.quickStatValue}>{xpTotal}</Text>
+            <Text style={styles.quickStatLabel}>XP total</Text>
           </View>
         </View>
       </ScrollView>
@@ -121,14 +119,8 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Colors.background,
-  },
-  scrollContent: {
-    padding: 20,
-    paddingBottom: 40,
-  },
+  container: { flex: 1, backgroundColor: Colors.background },
+  scrollContent: { padding: 20, paddingBottom: 40 },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -136,15 +128,8 @@ const styles = StyleSheet.create({
     marginBottom: 30,
     marginTop: 10,
   },
-  greeting: {
-    color: Colors.text,
-    fontSize: 28,
-    fontWeight: '800',
-  },
-  subtitle: {
-    color: Colors.textMuted,
-    fontSize: 16,
-  },
+  greeting: { color: Colors.text, fontSize: 28, fontWeight: '800' },
+  subtitle: { color: Colors.textMuted, fontSize: 16 },
   levelBadge: {
     backgroundColor: Colors.surfaceLight,
     paddingVertical: 6,
@@ -153,22 +138,15 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.primary,
   },
-  levelText: {
-    color: Colors.primary,
-    fontWeight: 'bold',
-  },
-  statsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 24,
-  },
+  levelText: { color: Colors.primary, fontWeight: 'bold' },
+  statsRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 24 },
   progressCard: {
     backgroundColor: Colors.surface,
     borderRadius: 24,
     padding: 24,
     marginBottom: 30,
-    boxShadow: '0px 4px 8px rgba(0, 0, 0, 0.3)',
-    elevation: 5,
+    borderWidth: 1,
+    borderColor: Colors.surfaceLight,
   },
   progressHeader: {
     flexDirection: 'row',
@@ -176,68 +154,21 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
     marginBottom: 12,
   },
-  progressTitle: {
-    color: Colors.text,
-    fontSize: 18,
-    fontWeight: '700',
-  },
-  progressValue: {
-    color: Colors.primary,
-    fontSize: 24,
-    fontWeight: '800',
-  },
-  progressNote: {
-    color: Colors.textMuted,
-    fontSize: 14,
-    marginTop: 12,
-  },
-  motivationBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255, 214, 0, 0.1)',
-    padding: 12,
-    borderRadius: 12,
-    marginTop: 20,
-  },
-  motivationText: {
-    color: Colors.warning,
-    marginLeft: 10,
-    fontWeight: '600',
-    fontSize: 14,
-  },
-  ctaSection: {
-    marginBottom: 30,
-  },
-  sectionTitle: {
-    color: Colors.text,
-    fontSize: 20,
-    fontWeight: '700',
-    marginBottom: 16,
-  },
-  pathContainer: {
-    alignItems: 'center',
-    paddingVertical: 20,
-    marginBottom: 30,
-  },
+  progressTitle: { color: Colors.text, fontSize: 18, fontWeight: '700' },
+  progressValue: { color: Colors.primary, fontSize: 22, fontWeight: '800' },
+  progressNote: { color: Colors.textMuted, fontSize: 13, marginTop: 10 },
+  sectionTitle: { color: Colors.text, fontSize: 20, fontWeight: '700', marginBottom: 16 },
+  pathContainer: { alignItems: 'center', paddingVertical: 20, marginBottom: 30 },
   quickStatsGrid: {
     flexDirection: 'row',
     backgroundColor: Colors.surface,
     borderRadius: 20,
     padding: 20,
     justifyContent: 'space-between',
+    borderWidth: 1,
+    borderColor: Colors.surfaceLight,
   },
-  quickStatItem: {
-    alignItems: 'center',
-    flex: 1,
-  },
-  quickStatValue: {
-    color: Colors.text,
-    fontSize: 20,
-    fontWeight: 'bold',
-  },
-  quickStatLabel: {
-    color: Colors.textMuted,
-    fontSize: 12,
-    marginTop: 4,
-  },
+  quickStatItem: { alignItems: 'center', flex: 1 },
+  quickStatValue: { color: Colors.text, fontSize: 20, fontWeight: 'bold' },
+  quickStatLabel: { color: Colors.textMuted, fontSize: 12, marginTop: 4 },
 });
