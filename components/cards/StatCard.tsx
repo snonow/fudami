@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors } from '../../constants/Colors';
+import { useTheme } from '../../context/ThemeContext';
 
 interface StatCardProps {
   label: string;
@@ -11,12 +11,13 @@ interface StatCardProps {
 }
 
 export const StatCard: React.FC<StatCardProps> = ({ label, value, icon, iconColor }) => {
+  const { colors } = useTheme();
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.surface }]}>
       <Ionicons name={icon} size={24} color={iconColor} style={styles.icon} />
       <View>
-        <Text style={styles.value}>{value}</Text>
-        <Text style={styles.label}>{label}</Text>
+        <Text style={[styles.value, { color: colors.text }]}>{value}</Text>
+        <Text style={[styles.label, { color: colors.textMuted }]}>{label}</Text>
       </View>
     </View>
   );
@@ -25,7 +26,6 @@ export const StatCard: React.FC<StatCardProps> = ({ label, value, icon, iconColo
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.surface,
     padding: 16,
     borderRadius: 20,
     flexDirection: 'row',
@@ -36,12 +36,10 @@ const styles = StyleSheet.create({
     marginRight: 12,
   },
   value: {
-    color: Colors.text,
     fontSize: 18,
     fontWeight: 'bold',
   },
   label: {
-    color: Colors.textMuted,
     fontSize: 12,
   },
 });

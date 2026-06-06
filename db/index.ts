@@ -153,3 +153,32 @@ export const updateStreak = async (): Promise<number> => {
   await db.runAsync('UPDATE user_progress SET streak_days = ?, streak_last_date = ? WHERE id = 1', [newStreak, today]);
   return newStreak;
 };
+
+export const getWeeklyActivity = async (): Promise<{ day: string; count: number }[]> => {
+  const db = await getDatabase();
+  const last7Days = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    return d.toISOString().slice(0, 10);
+  }).reverse();
+
+  const results = await Promise.all(last7Days.map(async (date) => {
+    const r = await db.getFirstAsync<{ c: number }>(
+      'SELECT COUNT(*) as c FROM reviews WHERE substr(reviewed_at, 1, 10) = ?',
+      [date]
+    );
+    return { day: date, count: r?.c ?? 0 };
+  }));
+
+  return results;
+};
+
+export const getRetentionRate = async (): Promise<number> => {
+  const db = await getDatabase();
+  const r = await db.getFirstAsync<{ total: number; success: number }>(
+    'SELECT COUNT(*) as total, SUM(CASE WHEN rating >= 3 THEN 1 ELSE 0 END) as success FROM reviews'
+  );
+  if (!r?.total) return 0;
+  return Math.round((r.success / r.total) * 100);
+};
+

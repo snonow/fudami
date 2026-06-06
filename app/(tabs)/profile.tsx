@@ -14,8 +14,8 @@ export default function ProfileScreen() {
     setLoading(true);
     try {
       const res = await ankiImporter.importDeck();
-      if (res) Alert.alert('Succès', `Deck "${res.deckName}" importé (${res.cardCount} cartes).`);
-    } catch (e) { Alert.alert('Erreur', 'Import échoué.'); }
+      if (res) Alert.alert('Success', `Deck "${res.deckName}" imported (${res.cardCount} cards).`);
+    } catch (e) { Alert.alert('Error', 'Import failed.'); }
     finally { setLoading(false); }
   };
 
@@ -24,31 +24,31 @@ export default function ProfileScreen() {
       <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 40 }}>
         <View style={styles.header}>
           <View style={styles.avatar}><Text style={styles.avatarT}>U</Text></View>
-          <Text style={styles.name}>Utilisateur</Text>
-          <Text style={styles.lvl}>Niveau {user.level}</Text>
+          <Text style={styles.name}>User</Text>
+          <Text style={styles.lvl}>Level {user.level}</Text>
         </View>
 
-        <Text style={styles.title}>Statistiques</Text>
+        <Text style={styles.title}>Statistics</Text>
         <View style={{ gap: 12, marginBottom: 30 }}>
           <View style={{ flexDirection: 'row', gap: 12 }}>
-            <StatCard label="XP Total" value={user.xpTotal} icon="star" iconColor={Colors.warning} />
-            <StatCard label="Série" value={`${user.streakDays} j`} icon="flame" iconColor="#FF5252" />
+            <StatCard label="Total XP" value={user.xpTotal} icon="star" iconColor={Colors.warning} />
+            <StatCard label="Streak" value={`${user.streakDays} d`} icon="flame" iconColor="#FF5252" />
           </View>
           <View style={{ flexDirection: 'row', gap: 12 }}>
-            <StatCard label="Révisions" value={user.totalReviews} icon="albums" iconColor={Colors.primary} />
-            <StatCard label="Niveau" value={user.level} icon="trending-up" iconColor={Colors.success} />
+            <StatCard label="Reviews" value={user.totalReviews} icon="albums" iconColor={Colors.primary} />
+            <StatCard label="Level" value={user.level} icon="trending-up" iconColor={Colors.success} />
           </View>
         </View>
 
         <Text style={styles.title}>Actions</Text>
         <View style={styles.card}>
-          {loading ? <ActivityIndicator color={Colors.primary} /> : <Button title="Importer un deck Anki (.apkg)" variant="outline" onPress={onImport} />}
+          {loading ? <ActivityIndicator color={Colors.primary} /> : <Button title="Import Anki Deck (.apkg)" variant="outline" onPress={onImport} />}
         </View>
 
-        <Text style={styles.title}>Paramètres</Text>
+        <Text style={styles.title}>Settings</Text>
         <View style={styles.card}>
           <View style={styles.row}>
-            <View><Text style={styles.label}>Objectif</Text><Text style={styles.sub}>{session.goalValue} cartes</Text></View>
+            <View><Text style={styles.label}>Daily Goal</Text><Text style={styles.sub}>{session.goalValue} cards</Text></View>
             <Switch value={true} trackColor={{ false: Colors.surfaceLight, true: Colors.primary }} />
           </View>
         </View>

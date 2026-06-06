@@ -27,9 +27,9 @@ export default function ReviewScreen() {
   if (!session.isActive || !card) return (
     <SafeAreaView style={[styles.container, styles.centered]}>
       <Text style={{ fontSize: 50 }}>🎉</Text>
-      <Text style={styles.doneText}>Session terminée !</Text>
+      <Text style={styles.doneText}>Session complete!</Text>
       <Text style={styles.xpText}>+{session.xpEarned} XP</Text>
-      <Button title="Nouvelle session" onPress={() => loadSession()} style={{ marginTop: 20 }} />
+      <Button title="New session" onPress={() => loadSession()} style={{ marginTop: 20 }} />
     </SafeAreaView>
   );
 
@@ -37,7 +37,7 @@ export default function ReviewScreen() {
     <SafeAreaView style={styles.container}>
       <View style={{ padding: 20 }}>
         <ProgressBar progress={session.progress} height={6} />
-        <Text style={styles.label}>{session.reviewedCount} / {session.goalValue} cartes</Text>
+        <Text style={styles.label}>{session.reviewedCount} / {session.goalValue} cards</Text>
       </View>
       <View style={styles.cardContainer}>
         <Flashcard frontKanji={card.front_kanji} frontKana={card.front_kana} back={card.back} isFlipped={flipped} onFlip={() => { setFlipped(true); feedbackService.playFlip(); }} />
@@ -46,15 +46,15 @@ export default function ReviewScreen() {
         {flipped ? (
           <View style={{ gap: 10 }}>
             <View style={{ flexDirection: 'row', gap: 10 }}>
-              <GradeBtn label="À revoir" xp="+0" color={Colors.error} onPress={() => onGrade('again')} />
-              <GradeBtn label="Difficile" xp="+5" color={Colors.warning} onPress={() => onGrade('hard')} />
+              <GradeBtn label="Again" xp="+0" color={Colors.error} onPress={() => onGrade('again')} />
+              <GradeBtn label="Hard" xp="+5" color={Colors.warning} onPress={() => onGrade('hard')} />
             </View>
             <View style={{ flexDirection: 'row', gap: 10 }}>
-              <GradeBtn label="Correct" xp="+10" color={Colors.primary} onPress={() => onGrade('good')} />
-              <GradeBtn label="Facile" xp="+15" color={Colors.success} onPress={() => onGrade('easy')} />
+              <GradeBtn label="Good" xp="+10" color={Colors.primary} onPress={() => onGrade('good')} />
+              <GradeBtn label="Easy" xp="+15" color={Colors.success} onPress={() => onGrade('easy')} />
             </View>
           </View>
-        ) : <Button title="Afficher la réponse" onPress={() => { setFlipped(true); feedbackService.playFlip(); }} style={styles.revealBtn} />}
+        ) : <Button title="Show answer" onPress={() => { setFlipped(true); feedbackService.playFlip(); }} style={styles.revealBtn} />}
       </View>
     </SafeAreaView>
   );

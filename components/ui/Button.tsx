@@ -10,6 +10,8 @@ interface ButtonProps {
   textStyle?: TextStyle;
 }
 
+import { useTheme } from '../../context/ThemeContext';
+
 export const Button: React.FC<ButtonProps> = ({ 
   title, 
   onPress, 
@@ -17,23 +19,25 @@ export const Button: React.FC<ButtonProps> = ({
   style,
   textStyle 
 }) => {
+  const { colors } = useTheme();
+
   const getVariantStyle = () => {
     switch (variant) {
       case 'secondary':
-        return styles.secondary;
+        return { backgroundColor: colors.secondary };
       case 'outline':
-        return styles.outline;
+        return { backgroundColor: 'transparent', borderWidth: 2, borderColor: colors.primary };
       default:
-        return styles.primary;
+        return { backgroundColor: colors.primary };
     }
   };
 
   const getTextStyle = () => {
     switch (variant) {
       case 'outline':
-        return styles.outlineText;
+        return { color: colors.primary };
       default:
-        return styles.text;
+        return { color: colors.white };
     }
   };
 
@@ -56,25 +60,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  primary: {
-    backgroundColor: Colors.primary,
-  },
-  secondary: {
-    backgroundColor: Colors.secondary,
-  },
-  outline: {
-    backgroundColor: 'transparent',
-    borderWidth: 2,
-    borderColor: Colors.primary,
-  },
   baseText: {
     fontSize: 16,
     fontWeight: '700',
-  },
-  text: {
-    color: Colors.text,
-  },
-  outlineText: {
-    color: Colors.primary,
   },
 });

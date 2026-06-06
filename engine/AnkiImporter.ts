@@ -23,7 +23,7 @@ export class AnkiImporter {
    */
   async importDeck(): Promise<AnkiImportResult | null> {
     if (Platform.OS === 'web') {
-      throw new Error("L'import Anki nécessite l'application iOS");
+      throw new Error("Anki import requires the native application.");
     }
     try {
       const result = await DocumentPicker.getDocumentAsync({

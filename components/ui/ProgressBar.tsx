@@ -1,22 +1,23 @@
 import React from 'react';
-import { View, StyleSheet, Animated } from 'react-native';
-import { Colors } from '../../constants/Colors';
+import { View, StyleSheet } from 'react-native';
+import { useTheme } from '../../context/ThemeContext';
 
 interface ProgressBarProps {
   progress: number; // 0 to 1
   height?: number;
+  color?: string;
 }
 
-export const ProgressBar: React.FC<ProgressBarProps> = ({ progress, height = 12 }) => {
-  const width = progress * 100;
+export const ProgressBar: React.FC<ProgressBarProps> = ({ progress, height = 12, color }) => {
+  const { colors } = useTheme();
+  const width = Math.max(0, Math.min(1, progress)) * 100;
 
   return (
-    <View style={[styles.container, { height }]}>
-      <View style={[styles.background, { height }]} />
+    <View style={[styles.container, { height, backgroundColor: colors.surfaceLight + '33' }]}>
       <View 
         style={[
           styles.fill, 
-          { width: `${width}%`, height, backgroundColor: Colors.primary }
+          { width: `${width}%`, height, backgroundColor: color || colors.teal }
         ]} 
       />
     </View>
@@ -26,16 +27,10 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({ progress, height = 12 
 const styles = StyleSheet.create({
   container: {
     width: '100%',
-    borderRadius: 6,
+    borderRadius: 8,
     overflow: 'hidden',
-    position: 'relative',
-  },
-  background: {
-    width: '100%',
-    backgroundColor: Colors.surfaceLight,
-    position: 'absolute',
   },
   fill: {
-    borderRadius: 6,
+    borderRadius: 8,
   },
 });
