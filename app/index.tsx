@@ -2,15 +2,6 @@ import React, { useEffect } from 'react';
 import { View, Text, StyleSheet, Pressable, Animated } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Colors } from '../constants/Colors';
-import { 
-  useFonts, 
-  NotoSansJP_400Regular, 
-  NotoSansJP_700Bold, 
-  NotoSansJP_300Light 
-} from '@expo-google-fonts/noto-sans-jp';
-import * as SplashScreen from 'expo-splash-screen';
-
-SplashScreen.preventAutoHideAsync();
 
 export default function LandingPage() {
   const router = useRouter();
@@ -100,7 +91,7 @@ const styles = StyleSheet.create({
     bottom: -50,
     right: -20,
     fontSize: 300,
-    fontFamily: 'KanjiStroke',
+    fontFamily: 'KanjiStroke', // Will fallback to system if not loaded
     color: 'rgba(200, 217, 230, 0.05)',
     zIndex: 0,
   },
