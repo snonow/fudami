@@ -8,6 +8,8 @@ import { ankiImporter } from '../../engine/AnkiImporter';
 
 export default function ProfileScreen() {
   const { user, session } = useAppStore();
+  const { colors } = useTheme();
+  const router = useRouter();
   const [loading, setLoading] = useState(false);
 
   const onImport = async () => {
@@ -20,12 +22,19 @@ export default function ProfileScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+      <View style={styles.headerBar}>
+        <Pressable onPress={() => router.back()} style={styles.backBtn}>
+          <Ionicons name="chevron-back" size={24} color={colors.text} />
+        </Pressable>
+        <Text style={[styles.headerTitle, { color: colors.text }]}>Profile</Text>
+        <View style={{ width: 40 }} />
+      </View>
       <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 40 }}>
         <View style={styles.header}>
-          <View style={styles.avatar}><Text style={styles.avatarT}>U</Text></View>
-          <Text style={styles.name}>User</Text>
-          <Text style={styles.lvl}>Level {user.level}</Text>
+          <View style={[styles.avatar, { backgroundColor: colors.surfaceLight + '33' }]}><Text style={[styles.avatarT, { color: colors.teal }]}>U</Text></View>
+          <Text style={[styles.name, { color: colors.text }]}>User</Text>
+          <Text style={[styles.lvl, { color: colors.teal }]}>Level {user.level}</Text>
         </View>
 
         <Text style={styles.title}>Statistics</Text>
@@ -58,15 +67,18 @@ export default function ProfileScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background },
+  container: { flex: 1 },
+  headerBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 10 },
+  backBtn: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(128,128,128,0.1)' },
+  headerTitle: { fontSize: 18, fontWeight: '700' },
   header: { alignItems: 'center', marginVertical: 30 },
-  avatar: { width: 80, height: 80, borderRadius: 40, backgroundColor: Colors.surfaceLight, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: Colors.primary, marginBottom: 10 },
-  avatarT: { fontSize: 32, color: Colors.primary, fontWeight: 'bold' },
-  name: { fontSize: 22, fontWeight: 'bold', color: Colors.text },
-  lvl: { fontSize: 14, color: Colors.primary, fontWeight: '600' },
-  title: { fontSize: 18, fontWeight: 'bold', color: Colors.text, marginBottom: 12, marginTop: 10 },
-  card: { backgroundColor: Colors.surface, borderRadius: 16, padding: 16 },
+  avatar: { width: 80, height: 80, borderRadius: 40, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: '#567C8D', marginBottom: 10 },
+  avatarT: { fontSize: 32, fontWeight: 'bold' },
+  name: { fontSize: 22, fontWeight: 'bold' },
+  lvl: { fontSize: 14, fontWeight: '600' },
+  title: { fontSize: 18, fontWeight: 'bold', marginBottom: 12, marginTop: 10 },
+  card: { borderRadius: 16, padding: 16 },
   row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  label: { fontSize: 15, color: Colors.text, fontWeight: '600' },
-  sub: { fontSize: 13, color: Colors.textMuted, marginTop: 2 },
+  label: { fontSize: 15, fontWeight: '600' },
+  sub: { fontSize: 13, marginTop: 2 },
 });

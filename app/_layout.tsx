@@ -25,7 +25,7 @@ export default function RootLayout() {
     NotoSansJP_700Bold,
     NotoSansJP_500Medium,
     NotoSansJP_300Light,
-    // 'KanjiStroke': require('../assets/fonts/KanjiStrokeOrders.ttf'), // User must provide this file
+    'KanjiStroke': require('../assets/fonts/KanjiStrokeOrders.ttf'),
   });
 
   const [dbReady, setDbReady] = useState(false);
