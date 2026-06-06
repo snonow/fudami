@@ -2,7 +2,7 @@ import React, { useRef, useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Animated, Pressable, Platform, Image } from 'react-native';
 import { Audio } from 'expo-av';
 import * as FileSystem from 'expo-file-system';
-import { useTheme } from '../../context/ThemeContext';
+import { useTheme } from '../../../context/ThemeContext';
 
 interface FlashcardProps {
   frontKanji: string;

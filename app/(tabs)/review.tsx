@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, SafeAreaView, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useTheme } from '../../context/ThemeContext';
+import { useTheme } from '../../../context/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
 import { Flashcard } from '../../components/cards/Flashcard';
 import { Button } from '../../components/ui/Button';

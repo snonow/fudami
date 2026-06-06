@@ -10,7 +10,7 @@ interface ButtonProps {
   textStyle?: TextStyle;
 }
 
-import { useTheme } from '../../context/ThemeContext';
+import { useTheme } from '../../../context/ThemeContext';
 
 export const Button: React.FC<ButtonProps> = ({ 
   title, 

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, SafeAreaView, ScrollView, Switch, Alert, ActivityIndicator, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useTheme } from '../../context/ThemeContext';
+import { useTheme } from '../../../context/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
 import { StatCard } from '../../components/cards/StatCard';
 import { Button } from '../../components/ui/Button';

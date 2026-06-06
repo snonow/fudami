@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, SafeAreaView, Pressable, useWindowDimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAppStore } from '../../store/useAppStore';
-import { useTheme } from '../../context/ThemeContext';
+import { useTheme } from '../../../context/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
 import { generatePath, getXPForNextLevel } from '../../engine';
 import { PathNode } from '../../components/gamification/PathNode';
