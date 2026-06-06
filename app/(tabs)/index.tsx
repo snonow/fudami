@@ -7,49 +7,27 @@ import { ProgressBar } from '../../components/ui/ProgressBar';
 import { Button } from '../../components/ui/Button';
 import { useAppStore } from '../../store/useAppStore';
 import { Ionicons } from '@expo/vector-icons';
-import { DUMMY_CARDS } from '../../constants/MockData';
-import { PathManager } from '../../engine/PathManager';
+import { generatePath, getXPForNextLevel } from '../../engine/srs';
 import { PathNode } from '../../components/gamification/PathNode';
-import { getXPForNextLevel } from '../../engine/gamification';
-
-import { getDueCards } from '../../db/cards';
+import { getDueCards } from '../../db';
 
 export default function HomeScreen() {
-  const { user, session, loadSession } = useAppStore();
+  const { user, loadSession, loadUser } = useAppStore();
   const router = useRouter();
-  const [cards, setCards] = React.useState<any[]>(DUMMY_CARDS);
+  const [cards, setCards] = React.useState<any[]>([]);
 
   React.useEffect(() => {
-    async function fetchCards() {
-      try {
-        const dbCards = await getDueCards(100, 100);
-        if (dbCards.length > 0) {
-          setCards(dbCards);
-        }
-      } catch (err) {
-        console.error('Failed to fetch cards for path:', err);
-      }
-    }
-    fetchCards();
+    loadUser();
+    getDueCards(100, 100).then(res => res.length && setCards(res));
   }, []);
 
-  // Safely calculate progress
-  const xpTotal = user?.xpTotal ?? 0;
-  const { current, next } = getXPForNextLevel(xpTotal);
-  const levelProgress = next > current ? (xpTotal - current) / (next - current) : 1;
-  const currentLevel = user?.level ?? 1;
+  const xp = user?.xpTotal ?? 0;
+  const { next, level } = getXPForNextLevel(xp);
+  const path = generatePath('JLPT N5', cards, user?.completedLevels ?? []);
 
-  // Use real cards if available, fallback to dummy
-  const path = PathManager.generatePath('JLPT N5', cards, user?.completedLevels ?? []);
-
-  const handleStartSession = async () => {
-    await loadSession();
-    router.push('/(tabs)/review');
-  };
-
-  const handleStartLevel = async (levelCardIds: string[]) => {
-    const levelCards = cards.filter((c) => levelCardIds.includes(c.id));
-    useAppStore.getState().startSession(levelCards, 'cards', levelCards.length);
+  const handleStart = async (c?: any[]) => {
+    if (c) useAppStore.getState().startSession(c, 'cards', c.length);
+    else await loadSession();
     router.push('/(tabs)/review');
   };
 
@@ -84,34 +62,18 @@ export default function HomeScreen() {
         <View style={styles.progressCard}>
           <View style={styles.progressHeader}>
             <Text style={styles.progressTitle}>Progression niveau</Text>
-            <Text style={styles.progressValue}>Lvl {currentLevel}</Text>
+            <Text style={styles.progressValue}>Lvl {level}</Text>
           </View>
-
-          <ProgressBar progress={levelProgress} height={12} />
-
-          <Text style={styles.progressNote}>
-            {xpTotal} / {next} XP
-          </Text>
-
-          <Button
-            title="Commencer une session"
-            onPress={handleStartSession}
-            style={{ marginTop: 20 }}
-          />
+          <ProgressBar progress={(xp - getXPForNextLevel(xp).current) / (next - getXPForNextLevel(xp).current)} height={12} />
+          <Text style={styles.progressNote}>{xp} / {next} XP</Text>
+          <Button title="Commencer une session" onPress={() => handleStart()} style={{ marginTop: 20 }} />
         </View>
 
         {/* Learning Path */}
         <Text style={styles.sectionTitle}>Mon Parcours</Text>
         <View style={styles.pathContainer}>
-          {path.map((level, index) => (
-            <PathNode
-              key={level.id}
-              index={index}
-              level={level.title}
-              isCompleted={level.isCompleted}
-              isLocked={level.isLocked}
-              onPress={() => handleStartLevel(level.cardIds)}
-            />
+          {path.map((l, i) => (
+            <PathNode key={l.id} index={i} level={l.title} isCompleted={l.isCompleted} isLocked={l.isLocked} onPress={() => handleStart(cards.filter(c => l.cardIds.includes(c.id)))} />
           ))}
         </View>
 

@@ -1,10 +1,10 @@
-import * as FileSystem from 'expo-file-system';
+import * as FileSystem from 'expo-file-system/legacy';
 import * as DocumentPicker from 'expo-document-picker';
 import * as SQLite from 'expo-sqlite';
 import { unzipSync } from 'fflate';
 import { Buffer } from 'buffer';
 import { Card as FSRSCard, State, createEmptyCard } from 'ts-fsrs';
-import { getDatabase } from '../db/schema';
+import { getDatabase } from '../db';
 
 export interface AnkiImportResult {
   deckName: string;
@@ -23,7 +23,7 @@ export class AnkiImporter {
   async importDeck(): Promise<AnkiImportResult | null> {
     try {
       const result = await DocumentPicker.getDocumentAsync({
-        type: ['application/octet-stream', 'application/zip', 'application/x-zip-compressed', '*/*'], 
+        type: '*/*',
         copyToCacheDirectory: true,
       });
 
