@@ -3,6 +3,9 @@ on:
   push:
     branches: [main]
 
+permissions:
+  contents: write
+
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
@@ -12,22 +15,14 @@ jobs:
         with:
           node-version: 20
       
-      - name: Install & Export
-        run: |
-          npm ci --legacy-peer-deps
-          npx expo export -p web
+      - name: Install Dependencies
+        run: npm ci --legacy-peer-deps
 
-      - name: Connect to Tailscale
-        uses: tailscale/github-action@v3
-        with:
-          authkey: ${{ secrets.TAILSCALE_AUTHKEY }}
+      - name: Build Web App
+        run: npx expo export -p web
 
-      - name: Deploy via SCP
-        uses: appleboy/scp-action@master
+      - name: Deploy to GitHub Pages
+        uses: JamesIves/github-pages-deploy-action@v4
         with:
-          host: ${{ secrets.LXC_IP }}
-          username: root
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: "dist/*"
-          target: "/opt/apps/fudami"
-          strip_components: 1
+          folder: dist
+          branch: gh-pages

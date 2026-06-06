@@ -1,144 +1,80 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, SafeAreaView } from 'react-native';
 import { Colors } from '../../constants/Colors';
 import { Flashcard } from '../../components/cards/Flashcard';
 import { Button } from '../../components/ui/Button';
+import { ProgressBar } from '../../components/ui/ProgressBar';
 import { useAppStore } from '../../store/useAppStore';
-import { DUMMY_CARDS } from '../../constants/MockData';
+import { feedbackService } from '../../engine/FeedbackService';
 
 export default function ReviewScreen() {
-  const { session, nextCard, addXP, startSession } = useAppStore();
-  const [isFlipped, setIsFlipped] = useState(false);
+  const { session, loadSession, gradeCard } = useAppStore();
+  const [flipped, setFlipped] = useState(false);
+  const [grading, setGrading] = useState(false);
 
-  // Initialize session with dummy data if not active
-  React.useEffect(() => {
-    if (!session.isActive) {
-      startSession(DUMMY_CARDS, 'cards', DUMMY_CARDS.length);
-    }
-  }, [session.isActive, startSession]);
+  useEffect(() => { if (!session.isActive) loadSession(); }, []);
+  useEffect(() => setFlipped(false), [session.currentIndex]);
 
-  const currentCard = session.cards[session.currentIndex];
-
-  const handleGrade = (rating: 'again' | 'hard' | 'good' | 'easy') => {
-    // In a real app, we'd pass this to FSRS engine. For now, just grant XP and move on.
-    const xpMap = { again: 0, hard: 5, good: 10, easy: 15 };
-    addXP(xpMap[rating]);
-    
-    // Reset flip state before next card
-    setIsFlipped(false);
-    
-    // Delay slightly to let the flip animation finish hiding the back before content changes
-    setTimeout(() => {
-      nextCard();
-    }, 150);
+  const onGrade = async (r: 'again' | 'hard' | 'good' | 'easy') => {
+    if (grading) return;
+    setGrading(true);
+    r === 'again' ? feedbackService.playError() : r === 'hard' ? feedbackService.playWarning() : feedbackService.playSuccess();
+    await gradeCard(r);
+    setGrading(false);
   };
 
-  if (!session.isActive || !currentCard) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.centered}>
-          <Text style={styles.doneText}>Session Terminée !</Text>
-          <Text style={styles.xpText}>+{session.xpEarned} XP gagnés</Text>
-          <Button 
-            title="Nouvelle Session" 
-            onPress={() => startSession(DUMMY_CARDS, 'cards', DUMMY_CARDS.length)} 
-            style={{ marginTop: 20 }}
-          />
-        </View>
-      </SafeAreaView>
-    );
-  }
+  const card = session.cards[session.currentIndex];
+  if (!session.isActive || !card) return (
+    <SafeAreaView style={[styles.container, styles.centered]}>
+      <Text style={{ fontSize: 50 }}>🎉</Text>
+      <Text style={styles.doneText}>Session terminée !</Text>
+      <Text style={styles.xpText}>+{session.xpEarned} XP</Text>
+      <Button title="Nouvelle session" onPress={() => loadSession()} style={{ marginTop: 20 }} />
+    </SafeAreaView>
+  );
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.headerText}>
-          Carte {session.currentIndex + 1} / {session.cards.length}
-        </Text>
+      <View style={{ padding: 20 }}>
+        <ProgressBar progress={session.progress} height={6} />
+        <Text style={styles.label}>{session.reviewedCount} / {session.goalValue} cartes</Text>
       </View>
-
       <View style={styles.cardContainer}>
-        <Flashcard 
-          frontContent={currentCard.front} 
-          backContent={currentCard.back}
-          isFlipped={isFlipped}
-          onFlip={() => setIsFlipped(true)}
-        />
+        <Flashcard frontKanji={card.front_kanji} frontKana={card.front_kana} back={card.back} isFlipped={flipped} onFlip={() => { setFlipped(true); feedbackService.playFlip(); }} />
       </View>
-
       <View style={styles.actionBar}>
-        {isFlipped ? (
-          <View style={styles.gradingRow}>
-            <Button title="À revoir" variant="outline" style={styles.gradeBtn} onPress={() => handleGrade('again')} />
-            <Button title="Difficile" variant="outline" style={styles.gradeBtn} onPress={() => handleGrade('hard')} />
-            <Button title="Correct" variant="primary" style={styles.gradeBtn} onPress={() => handleGrade('good')} />
-            <Button title="Facile" variant="secondary" style={styles.gradeBtn} onPress={() => handleGrade('easy')} />
+        {flipped ? (
+          <View style={{ gap: 10 }}>
+            <View style={{ flexDirection: 'row', gap: 10 }}>
+              <GradeBtn label="À revoir" xp="+0" color={Colors.error} onPress={() => onGrade('again')} />
+              <GradeBtn label="Difficile" xp="+5" color={Colors.warning} onPress={() => onGrade('hard')} />
+            </View>
+            <View style={{ flexDirection: 'row', gap: 10 }}>
+              <GradeBtn label="Correct" xp="+10" color={Colors.primary} onPress={() => onGrade('good')} />
+              <GradeBtn label="Facile" xp="+15" color={Colors.success} onPress={() => onGrade('easy')} />
+            </View>
           </View>
-        ) : (
-          <Button 
-            title="Afficher la réponse" 
-            onPress={() => setIsFlipped(true)} 
-            style={styles.revealBtn}
-          />
-        )}
+        ) : <Button title="Afficher la réponse" onPress={() => { setFlipped(true); feedbackService.playFlip(); }} style={styles.revealBtn} />}
       </View>
     </SafeAreaView>
   );
 }
 
+const GradeBtn = ({ label, xp, color, onPress }: any) => (
+  <View style={[styles.gradeBtn, { borderColor: color + '55' }]}>
+    <Button title={label} onPress={onPress} style={{ backgroundColor: color + '22', flex: 1 }} />
+    <Text style={{ fontSize: 10, color, fontWeight: 'bold', paddingBottom: 4 }}>{xp} XP</Text>
+  </View>
+);
+
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Colors.background,
-  },
-  header: {
-    padding: 20,
-    alignItems: 'center',
-  },
-  headerText: {
-    color: Colors.textMuted,
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  cardContainer: {
-    flex: 1,
-    paddingHorizontal: 20,
-    justifyContent: 'center',
-  },
-  actionBar: {
-    padding: 20,
-    paddingBottom: 40,
-    minHeight: 120, // Keep space consistent whether grading or revealing
-    justifyContent: 'flex-end',
-  },
-  revealBtn: {
-    width: '100%',
-    paddingVertical: 18,
-  },
-  gradingRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: 8,
-  },
-  gradeBtn: {
-    flex: 1,
-    paddingHorizontal: 0, // Let flex handle width
-    paddingVertical: 12,
-  },
-  centered: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  doneText: {
-    color: Colors.text,
-    fontSize: 28,
-    fontWeight: 'bold',
-    marginBottom: 10,
-  },
-  xpText: {
-    color: Colors.warning,
-    fontSize: 20,
-    fontWeight: '600',
-  },
+  container: { flex: 1, backgroundColor: Colors.background },
+  centered: { justifyContent: 'center', alignItems: 'center' },
+  label: { color: Colors.textMuted, fontSize: 12, textAlign: 'right', marginTop: 4 },
+  cardContainer: { flex: 1, padding: 20, justifyContent: 'center' },
+  actionBar: { padding: 20, paddingBottom: 40, minHeight: 140, justifyContent: 'flex-end' },
+  revealBtn: { width: '100%', paddingVertical: 18 },
+  gradeBtn: { flex: 1, borderRadius: 12, borderWidth: 1, overflow: 'hidden', alignItems: 'center' },
+  doneText: { color: Colors.text, fontSize: 24, fontWeight: 'bold' },
+  xpText: { color: Colors.warning, fontSize: 18, fontWeight: 'bold' },
 });

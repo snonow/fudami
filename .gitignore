@@ -11,6 +11,7 @@ node_modules/
 # AI/Agent config files
 CLAUDE.md
 AGENTS.md
+GEMINI.md
 .claude/
 expo-env.d.ts
 
@@ -44,3 +45,5 @@ yarn-error.*
 # generated native folders
 /ios
 /android
+# Added by code-review-graph
+.code-review-graph/
