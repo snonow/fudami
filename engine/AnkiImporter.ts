@@ -1,10 +1,10 @@
-import * as FileSystem from 'expo-file-system/legacy';
+import * as FileSystem from 'expo-file-system';
 import * as DocumentPicker from 'expo-document-picker';
 import * as SQLite from 'expo-sqlite';
 import { unzipSync } from 'fflate';
 import { Buffer } from 'buffer';
 import { Card as FSRSCard, State, createEmptyCard } from 'ts-fsrs';
-import { DATABASE_NAME } from '../db/schema';
+import { getDatabase } from '../db/schema';
 
 export interface AnkiImportResult {
   deckName: string;
@@ -23,27 +23,29 @@ export class AnkiImporter {
   async importDeck(): Promise<AnkiImportResult | null> {
     try {
       const result = await DocumentPicker.getDocumentAsync({
-        type: ['application/octet-stream', 'application/zip', 'application/x-zip-compressed'],
+        type: '*/*', 
         copyToCacheDirectory: true,
       });
 
       if (result.canceled) return null;
 
-      const fileUri = result.assets[0].uri;
+      const asset = result.assets[0];
+      const fileUri = asset.uri;
+      const fileName = asset.name;
+
+      if (!fileName.toLowerCase().endsWith('.apkg') && !fileName.toLowerCase().endsWith('.zip')) {
+        throw new Error('Le fichier doit être un deck Anki (.apkg)');
+      }
       
-      // 1. Clean up old temp files
       await this.cleanup();
       await FileSystem.makeDirectoryAsync(AnkiImporter.TEMP_DIR, { intermediates: true });
 
-      // 2. Extract APKG (which is a ZIP)
       console.log('Extracting package...');
       await this.extractPackage(fileUri);
 
-      // 3. Process Media
       console.log('Processing media...');
       const mediaCount = await this.processMedia();
 
-      // 4. Process Database
       console.log('Processing database...');
       const dbResult = await this.processDatabase();
 
@@ -77,7 +79,8 @@ export class AnkiImporter {
 
   private async processMedia(): Promise<number> {
     const mediaJsonPath = `${AnkiImporter.TEMP_DIR}media`;
-    if (!(await FileSystem.getInfoAsync(mediaJsonPath)).exists) return 0;
+    const info = await FileSystem.getInfoAsync(mediaJsonPath);
+    if (!info.exists) return 0;
 
     const mediaJson = await FileSystem.readAsStringAsync(mediaJsonPath);
     const mediaMap: Record<string, string> = JSON.parse(mediaJson);
@@ -89,7 +92,8 @@ export class AnkiImporter {
       const from = `${AnkiImporter.TEMP_DIR}${tempName}`;
       const to = `${AnkiImporter.MEDIA_DIR}${realName}`;
       
-      if ((await FileSystem.getInfoAsync(from)).exists) {
+      const fromInfo = await FileSystem.getInfoAsync(from);
+      if (fromInfo.exists) {
         await FileSystem.moveAsync({ from, to });
         count++;
       }
@@ -101,12 +105,14 @@ export class AnkiImporter {
     let dbFilename = 'collection.anki2';
     let sourcePath = `${AnkiImporter.TEMP_DIR}${dbFilename}`;
 
-    if (!(await FileSystem.getInfoAsync(sourcePath)).exists) {
+    let info = await FileSystem.getInfoAsync(sourcePath);
+    if (!info.exists) {
       dbFilename = 'collection.anki21';
       sourcePath = `${AnkiImporter.TEMP_DIR}${dbFilename}`;
+      info = await FileSystem.getInfoAsync(sourcePath);
     }
 
-    if (!(await FileSystem.getInfoAsync(sourcePath)).exists) {
+    if (!info.exists) {
       throw new Error('Could not find Anki database in package');
     }
 
@@ -117,22 +123,20 @@ export class AnkiImporter {
     await FileSystem.copyAsync({ from: sourcePath, to: targetPath });
 
     const ankiDb = await SQLite.openDatabaseAsync(targetDbName);
-    const fudamiDb = await SQLite.openDatabaseAsync(DATABASE_NAME);
+    const fudamiDb = await getDatabase();
 
     try {
-      // 1. Get Collection Info (creation time, decks, config)
       const colRow: any = await ankiDb.getFirstAsync('SELECT crt, decks, dconf FROM col');
-      const creationTime = colRow.crt * 1000; // Anki crt is in seconds
+      const creationTime = colRow.crt * 1000;
       const decks = JSON.parse(colRow.decks);
       
       const deckIds = Object.keys(decks).filter(id => id !== '1');
       const primaryDeckId = deckIds[0] || '1';
       const deckName = decks[primaryDeckId].name;
 
-      // 2. Fetch all cards and notes for the selected deck
       const query = `
         SELECT 
-          n.id as note_id, n.flds as fields, n.tags,
+          c.id as card_id, n.id as note_id, n.flds as fields, n.tags,
           c.due, c.ivl, c.factor, c.reps, c.lapses, c.queue, c.type as card_type
         FROM notes n
         JOIN cards c ON n.id = c.nid
@@ -141,7 +145,6 @@ export class AnkiImporter {
       
       const rows: any[] = await ankiDb.getAllAsync(query, [parseInt(primaryDeckId)]);
 
-      // 3. Map and Insert into Fudami
       await fudamiDb.withTransactionAsync(async () => {
         for (const row of rows) {
           const fields = row.fields.split('\x1f');
@@ -149,31 +152,25 @@ export class AnkiImporter {
           let frontKana = '';
           let back = '';
 
-          // Smart Mapping for common deck structures
           if (fields.length >= 4) {
-            // Likely [Level, Kana, Kanji, Meaning] like the sample deck
             frontKana = fields[1];
             frontKanji = fields[2] || fields[1];
             back = fields[3];
           } else if (fields.length === 3) {
-            // Likely [Kana, Kanji, Meaning]
             frontKana = fields[0];
             frontKanji = fields[1] || fields[0];
             back = fields[2];
           } else {
-            // Fallback [Front, Back]
             frontKanji = fields[0];
             back = fields[1] || '';
           }
 
-          // Clean HTML tags if any
           const clean = (text: string) => text.replace(/<[^>]*>?/gm, '').trim();
           
           const finalKanji = clean(frontKanji);
           const finalKana = clean(frontKana);
           const finalBack = clean(back);
           
-          // Map Anki state to FSRSCard
           const fsrsCard = this.mapAnkiToFSRS(row, creationTime);
           
           await fudamiDb.runAsync(
@@ -181,7 +178,7 @@ export class AnkiImporter {
               id, type, front_kanji, front_kana, back, level, fsrs_state, due_date, created_at
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [
-              `anki_${row.note_id}`,
+              `anki_${row.card_id}`,
               'vocab',
               finalKanji,
               finalKana,
@@ -201,26 +198,19 @@ export class AnkiImporter {
       };
     } finally {
       await ankiDb.closeAsync();
-      // Cleanup the temporary import DB
       await FileSystem.deleteAsync(targetPath, { idempotent: true });
     }
   }
 
-  /**
-   * Approximate Anki scheduling info to FSRS state
-   */
   private mapAnkiToFSRS(row: any, creationTime: number): FSRSCard {
     const card = createEmptyCard(new Date());
     
-    // Anki Due:
-    // For review cards (queue=2), due is days since creationTime
-    // For new/learning, it's often a timestamp or sequence
     let dueDate: Date;
     if (row.queue === 2) {
       dueDate = new Date(creationTime + row.due * 24 * 60 * 60 * 1000);
       card.state = State.Review;
     } else {
-      dueDate = new Date(); // Treat non-review as due now
+      dueDate = new Date();
       card.state = row.queue === 0 ? State.New : State.Learning;
     }
 
@@ -229,9 +219,6 @@ export class AnkiImporter {
     card.scheduled_days = row.ivl > 0 ? row.ivl : 0;
     card.reps = row.reps;
     card.lapses = row.lapses;
-
-    // FSRS doesn't directly use Anki's "factor" (ease), but we could use it to seed stability
-    // For now, we'll let the FSRS engine re-calibrate as the user reviews.
 
     return card;
   }
