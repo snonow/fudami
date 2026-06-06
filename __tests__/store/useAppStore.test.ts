@@ -27,7 +27,7 @@ describe('useAppStore', () => {
 
   it('should start a session correctly', () => {
     const dummyCards = [
-      { id: '1', front_kanji: 'A', front_kana: 'a', back: 'B', level: 'n5', created_at: '' },
+      { id: '1', front_kanji: 'A', front_kana: 'a', back: 'B', level: 'n5' as const, created_at: '' },
     ];
     useAppStore.getState().startSession(dummyCards, 'cards', 10);
 

@@ -1,9 +1,10 @@
-import * as FileSystem from 'expo-file-system/legacy';
+import * as FileSystem from 'expo-file-system';
 import * as DocumentPicker from 'expo-document-picker';
 import * as SQLite from 'expo-sqlite';
 import { unzipSync } from 'fflate';
 import { Buffer } from 'buffer';
 import { Card as FSRSCard, State, createEmptyCard } from 'ts-fsrs';
+import { Platform } from 'react-native';
 import { getDatabase } from '../db';
 
 export interface AnkiImportResult {
@@ -21,6 +22,9 @@ export class AnkiImporter {
    * Main entry point to pick and import an .apkg file
    */
   async importDeck(): Promise<AnkiImportResult | null> {
+    if (Platform.OS === 'web') {
+      throw new Error("L'import Anki nécessite l'application iOS");
+    }
     try {
       const result = await DocumentPicker.getDocumentAsync({
         type: '*/*',
@@ -169,14 +173,12 @@ export class AnkiImporter {
             frontKanji = fields[0];
             back = fields[1] || '';
           }
+// Keep media tags for Flashcard component to parse
+const finalKanji = frontKanji.trim();
+const finalKana = frontKana.trim();
+const finalBack = back.trim();
 
-          const clean = (text: string) => text.replace(/<[^>]*>?/gm, '').trim();
-          
-          const finalKanji = clean(frontKanji);
-          const finalKana = clean(frontKana);
-          const finalBack = clean(back);
-          
-          const fsrsCard = this.mapAnkiToFSRS(row, creationTime);
+const fsrsCard = this.mapAnkiToFSRS(row, creationTime);
           
           await fudamiDb.runAsync(
             `INSERT OR REPLACE INTO cards (

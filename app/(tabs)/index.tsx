@@ -48,14 +48,14 @@ export default function HomeScreen() {
             <Text style={styles.subtitle}>Prêt pour ta session ?</Text>
           </View>
           <View style={styles.levelBadge}>
-            <Text style={styles.levelText}>Lvl {currentLevel}</Text>
+            <Text style={styles.levelText}>Lvl {level}</Text>
           </View>
         </View>
 
         {/* Stats Row */}
         <View style={styles.statsRow}>
           <StatCard label="Série" value={`${user?.streakDays ?? 0} j`} icon="flame" iconColor="#FF9800" />
-          <StatCard label="Total XP" value={xpTotal} icon="star" iconColor="#FFD600" />
+          <StatCard label="Total XP" value={xp} icon="star" iconColor="#FFD600" />
         </View>
 
         {/* XP Progress Card */}
@@ -88,7 +88,7 @@ export default function HomeScreen() {
             <Text style={styles.quickStatLabel}>Jours de série</Text>
           </View>
           <View style={styles.quickStatItem}>
-            <Text style={styles.quickStatValue}>{xpTotal}</Text>
+            <Text style={styles.quickStatValue}>{xp}</Text>
             <Text style={styles.quickStatLabel}>XP total</Text>
           </View>
         </View>

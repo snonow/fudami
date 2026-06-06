@@ -35,22 +35,28 @@ const SCHEMA = `
   );
   INSERT OR IGNORE INTO user_progress (id, xp_total, level, streak_days, total_reviews) VALUES (1, 0, 1, 0, 0);
 `;
+let _dbP: Promise<SQLite.SQLiteDatabase> | null = null;
+let _initP: Promise<void> | null = null;
 
-let _db: SQLite.SQLiteDatabase | null = null;
-
-export const getDatabase = async () => {
-  if (!_db) _db = await SQLite.openDatabaseAsync(DATABASE_NAME);
-  return _db;
+export const getDatabase = () => {
+  if (!_dbP) _dbP = SQLite.openDatabaseAsync(DATABASE_NAME);
+  return _dbP;
 };
 
 export const initDb = async () => {
-  const db = await getDatabase();
-  const res = await db.getFirstAsync<{ user_version: number }>('PRAGMA user_version');
-  if ((res?.user_version ?? 0) < 1) {
-    await db.execAsync(SCHEMA);
-    await db.execAsync('PRAGMA user_version = 1');
-  }
-  await seedIfNeeded(db);
+  if (_initP) return _initP;
+  
+  _initP = (async () => {
+    const db = await getDatabase();
+    const res = await db.getFirstAsync<{ user_version: number }>('PRAGMA user_version');
+    if ((res?.user_version ?? 0) < 1) {
+      await db.execAsync(SCHEMA);
+      await db.execAsync('PRAGMA user_version = 1');
+    }
+    await seedIfNeeded(db);
+  })();
+  
+  return _initP;
 };
 
 const seedIfNeeded = async (db: SQLite.SQLiteDatabase) => {
@@ -126,6 +132,14 @@ export const addXPAndReview = async (xp: number): Promise<UserState> => {
 
   await db.runAsync('UPDATE user_progress SET xp_total = ?, level = ?, total_reviews = ? WHERE id = 1', [newXP, newLevel, newReviews]);
   return { xpTotal: newXP, level: newLevel, streakDays: r?.streak_days ?? 0, totalReviews: newReviews, completedLevels: [] };
+};
+
+export const getTotalLearned = async (): Promise<number> => {
+  const db = await getDatabase();
+  const r = await db.getFirstAsync<{ c: number }>(
+    'SELECT COUNT(*) as c FROM cards WHERE EXISTS (SELECT 1 FROM reviews WHERE card_id = cards.id)'
+  );
+  return r?.c ?? 0;
 };
 
 export const updateStreak = async (): Promise<number> => {
