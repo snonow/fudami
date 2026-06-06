@@ -11,6 +11,7 @@ node_modules/
 # AI/Agent config files
 CLAUDE.md
 AGENTS.md
+GEMINI.md
 .claude/
 expo-env.d.ts
 

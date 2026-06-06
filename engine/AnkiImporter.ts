@@ -23,7 +23,7 @@ export class AnkiImporter {
   async importDeck(): Promise<AnkiImportResult | null> {
     try {
       const result = await DocumentPicker.getDocumentAsync({
-        type: '*/*', 
+        type: ['application/octet-stream', 'application/zip', 'application/x-zip-compressed', '*/*'], 
         copyToCacheDirectory: true,
       });
 
@@ -31,10 +31,15 @@ export class AnkiImporter {
 
       const asset = result.assets[0];
       const fileUri = asset.uri;
-      const fileName = asset.name;
+      const fileName = asset.name || 'deck.apkg';
 
-      if (!fileName.toLowerCase().endsWith('.apkg') && !fileName.toLowerCase().endsWith('.zip')) {
-        throw new Error('Le fichier doit être un deck Anki (.apkg)');
+      // More flexible extension check
+      const isAnkiFile = fileName.toLowerCase().endsWith('.apkg') || 
+                         fileName.toLowerCase().endsWith('.zip') || 
+                         asset.mimeType === 'application/octet-stream';
+
+      if (!isAnkiFile) {
+        console.warn('Selected file might not be an Anki deck:', fileName);
       }
       
       await this.cleanup();

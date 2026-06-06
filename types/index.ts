@@ -1,7 +1,12 @@
 export interface Card {
   id: string;
-  front: string;
+  front_kanji: string;
+  front_kana: string;
   back: string;
+  level: 'n5' | 'n4' | 'n3';
+  fsrs_state?: string;
+  due_date?: string;
+  created_at: string;
 }
 
 export type ReviewMode = 'flip' | 'mcq' | 'typing';
@@ -12,9 +17,11 @@ export interface SessionState {
   currentIndex: number;
   mode: ReviewMode;
   xpEarned: number;
-  goalType: 'cards' | 'minutes';
+  reviewedCount: number;
   goalValue: number;
+  goalType: 'cards' | 'minutes';
   progress: number;
+  lastModeByCardId: Record<string, ReviewMode>;
 }
 
 export interface UserState {
@@ -22,7 +29,7 @@ export interface UserState {
   level: number;
   streakDays: number;
   totalReviews: number;
-  completedLevels: string[]; // List of Level IDs
+  completedLevels: string[];
 }
 
 export interface PathLevel {

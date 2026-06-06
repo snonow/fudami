@@ -1,16 +1,18 @@
 import { Card } from '../types';
+import vocabN5 from '../assets/jmdict/vocab_n5.json';
 
-export const DUMMY_CARDS: Card[] = [
-  { id: '1', front: '猫', back: 'Neko (Chat)' },
-  { id: '2', front: '犬', back: 'Inu (Chien)' },
-  { id: '3', front: '鳥', back: 'Tori (Oiseau)' },
-  { id: '4', front: '水', back: 'Mizu (Eau)' },
-  { id: '5', front: '火', back: 'Hi (Feu)' },
-];
+const now = new Date().toISOString();
 
+export const DUMMY_CARDS: Card[] = vocabN5.map((w) => ({
+  ...w,
+  level: 'n5' as const,
+  created_at: now,
+}));
+
+// Kept for stats display — will be replaced by real DB queries
 export const MOCK_USER_STATS = {
-  dailyProgress: 0.65,
-  cardsRemaining: 12,
-  cardsLearned: 15,
-  accuracy: '85%',
+  dailyProgress: 0,
+  cardsRemaining: 0,
+  cardsLearned: 0,
+  accuracy: '—',
 };

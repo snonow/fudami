@@ -38,9 +38,9 @@ export function createNewCard(): Card {
 export function scheduleReview(card: Card, rating: Rating): FSRSReviewResult {
   const now = new Date();
   const schedulingCards = fsrs.repeat(card, now);
-  
-  // schedulingCards is a record of Card objects for each rating
-  const result = schedulingCards[rating];
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const result = (schedulingCards as any)[rating];
   
   return {
     card: result.card,

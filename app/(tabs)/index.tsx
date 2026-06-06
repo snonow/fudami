@@ -12,9 +12,26 @@ import { PathManager } from '../../engine/PathManager';
 import { PathNode } from '../../components/gamification/PathNode';
 import { getXPForNextLevel } from '../../engine/gamification';
 
+import { getDueCards } from '../../db/cards';
+
 export default function HomeScreen() {
   const { user, session, loadSession } = useAppStore();
   const router = useRouter();
+  const [cards, setCards] = React.useState<any[]>(DUMMY_CARDS);
+
+  React.useEffect(() => {
+    async function fetchCards() {
+      try {
+        const dbCards = await getDueCards(100, 100);
+        if (dbCards.length > 0) {
+          setCards(dbCards);
+        }
+      } catch (err) {
+        console.error('Failed to fetch cards for path:', err);
+      }
+    }
+    fetchCards();
+  }, []);
 
   // Safely calculate progress
   const xpTotal = user?.xpTotal ?? 0;
@@ -22,8 +39,8 @@ export default function HomeScreen() {
   const levelProgress = next > current ? (xpTotal - current) / (next - current) : 1;
   const currentLevel = user?.level ?? 1;
 
-  // Use dummy cards for path generation if none available yet
-  const path = PathManager.generatePath('JLPT N5', DUMMY_CARDS, user?.completedLevels ?? []);
+  // Use real cards if available, fallback to dummy
+  const path = PathManager.generatePath('JLPT N5', cards, user?.completedLevels ?? []);
 
   const handleStartSession = async () => {
     await loadSession();
@@ -31,7 +48,7 @@ export default function HomeScreen() {
   };
 
   const handleStartLevel = async (levelCardIds: string[]) => {
-    const levelCards = DUMMY_CARDS.filter((c) => levelCardIds.includes(c.id));
+    const levelCards = cards.filter((c) => levelCardIds.includes(c.id));
     useAppStore.getState().startSession(levelCards, 'cards', levelCards.length);
     router.push('/(tabs)/review');
   };

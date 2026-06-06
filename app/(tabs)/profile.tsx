@@ -1,15 +1,20 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, SafeAreaView, ScrollView, Switch, Alert, ActivityIndicator } from 'react-native';
 import { Colors } from '../../constants/Colors';
 import { StatCard } from '../../components/cards/StatCard';
 import { Button } from '../../components/ui/Button';
 import { useAppStore } from '../../store/useAppStore';
-import { MOCK_USER_STATS } from '../../constants/MockData';
+import { getTotalLearned } from '../../db/cards';
 import { ankiImporter } from '../../engine/AnkiImporter';
 
 export default function ProfileScreen() {
   const { user, session } = useAppStore();
   const [isImporting, setIsImporting] = useState(false);
+  const [totalLearned, setTotalLearned] = useState(0);
+
+  useEffect(() => {
+    getTotalLearned().then(setTotalLearned);
+  }, []);
 
   const handleAnkiImport = async () => {
     setIsImporting(true);
@@ -65,11 +70,11 @@ export default function ProfileScreen() {
               icon="albums" 
               iconColor={Colors.primary} 
             />
-            <StatCard 
-              label="Cartes Apprises" 
-              value={MOCK_USER_STATS.cardsLearned}
-              icon="checkmark-circle" 
-              iconColor={Colors.success} 
+            <StatCard
+              label="Cartes Apprises"
+              value={totalLearned}
+              icon="checkmark-circle"
+              iconColor={Colors.success}
             />
           </View>
         </View>
