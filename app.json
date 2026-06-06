@@ -20,6 +20,7 @@
     },
     "web": {
       "bundler": "metro",
+      "output": "static",
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
@@ -29,7 +30,8 @@
       "expo-status-bar"
     ],
     "experiments": {
-      "typedRoutes": true
+      "typedRoutes": true,
+      "baseUrl": "/fudami"
     }
   }
 }
