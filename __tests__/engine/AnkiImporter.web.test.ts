@@ -1,4 +1,4 @@
-// Test isolé : vérifie que l'import Anki lève une erreur claire sur web.
+// Isolated test: verifies that Anki import throws a clear error on web.
 jest.mock('react-native', () => ({
   Platform: { OS: 'web' },
 }));
@@ -10,13 +10,13 @@ jest.mock('../../db', () => ({ getDatabase: jest.fn() }));
 
 import { AnkiImporter } from '../../engine/AnkiImporter';
 
-describe('AnkiImporter sur web', () => {
-  it("lève une erreur explicite avec mention d'iOS", async () => {
+describe('AnkiImporter on web', () => {
+  it("throws an explicit error mentioning native format", async () => {
     const importer = new AnkiImporter();
-    await expect(importer.importDeck()).rejects.toThrow('iOS');
+    await expect(importer.importDeck()).rejects.toThrow('native');
   });
 
-  it('ne tente pas d\'appeler DocumentPicker sur web', async () => {
+  it('does not attempt to call DocumentPicker on web', async () => {
     const { getDocumentAsync } = require('expo-document-picker');
     const importer = new AnkiImporter();
     try { await importer.importDeck(); } catch {}

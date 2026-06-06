@@ -12,6 +12,7 @@ node_modules/
 CLAUDE.md
 AGENTS.md
 GEMINI.md
+PLATFORM.md
 .claude/
 expo-env.d.ts
 

@@ -49,13 +49,9 @@ export class AnkiImporter {
       await this.cleanup();
       await FileSystem.makeDirectoryAsync(AnkiImporter.TEMP_DIR, { intermediates: true });
 
-      console.log('Extracting package...');
       await this.extractPackage(fileUri);
 
-      console.log('Processing media...');
       const mediaCount = await this.processMedia();
-
-      console.log('Processing database...');
       const dbResult = await this.processDatabase();
 
       return {
@@ -157,9 +153,7 @@ export class AnkiImporter {
       await fudamiDb.withTransactionAsync(async () => {
         for (const row of rows) {
           const fields = row.fields.split('\x1f');
-          let frontKanji = '';
-          let frontKana = '';
-          let back = '';
+          let frontKanji = '', frontKana = '', back = '';
 
           if (fields.length >= 4) {
             frontKana = fields[1];
@@ -173,28 +167,14 @@ export class AnkiImporter {
             frontKanji = fields[0];
             back = fields[1] || '';
           }
-// Keep media tags for Flashcard component to parse
-const finalKanji = frontKanji.trim();
-const finalKana = frontKana.trim();
-const finalBack = back.trim();
 
-const fsrsCard = this.mapAnkiToFSRS(row, creationTime);
+          const clean = (t: string) => t.trim(); // Keep media tags
+          const fsrsCard = this.mapAnkiToFSRS(row, creationTime);
           
           await fudamiDb.runAsync(
-            `INSERT OR REPLACE INTO cards (
-              id, type, front_kanji, front_kana, back, level, fsrs_state, due_date, created_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-            [
-              `anki_${row.card_id}`,
-              'vocab',
-              finalKanji,
-              finalKana,
-              finalBack,
-              'imported',
-              JSON.stringify(fsrsCard),
-              fsrsCard.due.toISOString(),
-              new Date().toISOString()
-            ]
+            `INSERT OR REPLACE INTO cards (id, type, front_kanji, front_kana, back, level, fsrs_state, due_date, created_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [`anki_${row.card_id}`, 'vocab', clean(frontKanji), clean(frontKana), clean(back), 'imported', JSON.stringify(fsrsCard), fsrsCard.due.toISOString(), new Date().toISOString()]
           );
         }
       });

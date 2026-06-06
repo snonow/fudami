@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, SafeAreaView } from 'react-native';
-import { Colors } from '../../constants/Colors';
+import { View, Text, StyleSheet, SafeAreaView, Pressable } from 'react-native';
+import { useRouter } from 'expo-router';
+import { useTheme } from '../../context/ThemeContext';
+import { Ionicons } from '@expo/vector-icons';
 import { Flashcard } from '../../components/cards/Flashcard';
 import { Button } from '../../components/ui/Button';
 import { ProgressBar } from '../../components/ui/ProgressBar';
 import { useAppStore } from '../../store/useAppStore';
-import { feedbackService } from '../../engine/FeedbackService';
+import { feedback } from '../../engine';
 
 export default function ReviewScreen() {
   const { session, loadSession, gradeCard } = useAppStore();
@@ -20,7 +22,7 @@ export default function ReviewScreen() {
   const onGrade = async (r: 'again' | 'hard' | 'good' | 'easy') => {
     if (grading) return;
     setGrading(true);
-    r === 'again' ? feedbackService.playError() : r === 'hard' ? feedbackService.playWarning() : feedbackService.playSuccess();
+    r === 'again' ? feedback.playError() : r === 'hard' ? feedback.playWarning() : feedback.playSuccess();
     await gradeCard(r);
     setGrading(false);
   };
@@ -30,7 +32,7 @@ export default function ReviewScreen() {
     <SafeAreaView style={[styles.container, styles.centered, { backgroundColor: colors.background }]}>
       <Text style={{ fontSize: 50 }}>🎉</Text>
       <Text style={[styles.doneText, { color: colors.text }]}>Session complete!</Text>
-      <Text style={styles.xpText}>+{session.xpEarned} XP</Text>
+      <Text style={[styles.xpText, { color: colors.warning }]}>+{session.xpEarned} XP</Text>
       <Button title="Return to Hub" onPress={() => router.back()} style={{ marginTop: 20 }} />
     </SafeAreaView>
   );
@@ -48,21 +50,21 @@ export default function ReviewScreen() {
       </View>
 
       <View style={styles.cardContainer}>
-        <Flashcard frontKanji={card.front_kanji} frontKana={card.front_kana} back={card.back} isFlipped={flipped} onFlip={() => { setFlipped(true); feedbackService.playFlip(); }} />
+        <Flashcard frontKanji={card.front_kanji} frontKana={card.front_kana} back={card.back} isFlipped={flipped} onFlip={() => { setFlipped(true); feedback.playFlip(); }} />
       </View>
       <View style={styles.actionBar}>
         {flipped ? (
           <View style={{ gap: 10 }}>
             <View style={{ flexDirection: 'row', gap: 10 }}>
-              <GradeBtn label="Again" xp="+0" color={Colors.error} onPress={() => onGrade('again')} />
-              <GradeBtn label="Hard" xp="+5" color={Colors.warning} onPress={() => onGrade('hard')} />
+              <GradeBtn label="Again" xp="+0" color={colors.error} onPress={() => onGrade('again')} />
+              <GradeBtn label="Hard" xp="+5" color={colors.warning} onPress={() => onGrade('hard')} />
             </View>
             <View style={{ flexDirection: 'row', gap: 10 }}>
-              <GradeBtn label="Good" xp="+10" color={Colors.primary} onPress={() => onGrade('good')} />
-              <GradeBtn label="Easy" xp="+15" color={Colors.success} onPress={() => onGrade('easy')} />
+              <GradeBtn label="Good" xp="+10" color={colors.teal} onPress={() => onGrade('good')} />
+              <GradeBtn label="Easy" xp="+15" color={colors.success} onPress={() => onGrade('easy')} />
             </View>
           </View>
-        ) : <Button title="Show answer" onPress={() => { setFlipped(true); feedbackService.playFlip(); }} style={styles.revealBtn} />}
+        ) : <Button title="Show answer" onPress={() => { setFlipped(true); feedback.playFlip(); }} style={styles.revealBtn} />}
       </View>
     </SafeAreaView>
   );
@@ -86,5 +88,5 @@ const styles = StyleSheet.create({
   revealBtn: { width: '100%', paddingVertical: 18 },
   gradeBtn: { flex: 1, borderRadius: 12, borderWidth: 1, overflow: 'hidden', alignItems: 'center' },
   doneText: { fontSize: 24, fontWeight: 'bold' },
-  xpText: { color: Colors.warning, fontSize: 18, fontWeight: 'bold' },
+  xpText: { fontSize: 18, fontWeight: 'bold' },
 });

@@ -141,18 +141,18 @@ describe('AnkiImporter', () => {
 
     it('handles 4 fields correctly', async () => {
       mockAnkiDb.getAllAsync.mockResolvedValue([
-        makeAnkiRow({ fields: 'audio\x1fたべる\x1f食べる\x1fmanger' }),
+        makeAnkiRow({ fields: 'audio\x1fたべる\x1f食べる\x1fto eat' }),
       ]);
       await importer.importDeck();
       const params = mockAppDb.runAsync.mock.calls[0][1];
       expect(params[2]).toBe('食べる');
       expect(params[3]).toBe('たべる');
-      expect(params[4]).toBe('manger');
+      expect(params[4]).toBe('to eat');
     });
 
     it('preserves tags for media rendering', async () => {
       mockAnkiDb.getAllAsync.mockResolvedValue([
-        makeAnkiRow({ fields: 'audio\x1fたべる\x1f<b>食べる</b>\x1f<i>manger</i>' }),
+        makeAnkiRow({ fields: 'audio\x1fたべる\x1f<b>食べる</b>\x1f<i>to eat</i>' }),
       ]);
       await importer.importDeck();
       const params = mockAppDb.runAsync.mock.calls[0][1];

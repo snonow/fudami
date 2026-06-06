@@ -4,7 +4,7 @@ import { useRouter } from 'expo-router';
 import { useAppStore } from '../../store/useAppStore';
 import { useTheme } from '../../context/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
-import { generatePath, getXPForNextLevel } from '../../engine/srs';
+import { generatePath, getXPForNextLevel } from '../../engine';
 import { PathNode } from '../../components/gamification/PathNode';
 import { ProgressBar } from '../../components/ui/ProgressBar';
 import { getDueCards, getWeeklyActivity, getRetentionRate } from '../../db';
@@ -91,21 +91,19 @@ export default function HomeHub() {
           />
         </View>
 
-        {/* Path View (Embedded) */}
-        <View style={styles.pathSection}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>Learning Path</Text>
-          <View style={styles.pathContainer}>
-            {path.slice(0, 5).map((l, i) => (
-              <PathNode 
-                key={l.id} 
-                index={i} 
-                level={l.title} 
-                isCompleted={l.isCompleted} 
-                isLocked={l.isLocked} 
-                onPress={() => handleStart(cards.filter(c => l.cardIds.includes(c.id)))} 
-              />
-            ))}
-          </View>
+        {/* Learning Path */}
+        <Text style={[styles.sectionTitle, { color: colors.text }]}>Learning Path</Text>
+        <View style={styles.pathContainer}>
+          {path.map((l, i) => (
+            <PathNode 
+              key={l.id} 
+              index={i} 
+              level={l.title} 
+              isCompleted={l.isCompleted} 
+              isLocked={l.isLocked} 
+              onPress={() => handleStart(cards.filter(c => l.cardIds.includes(c.id)))} 
+            />
+          ))}
         </View>
 
       </ScrollView>

@@ -9,7 +9,7 @@ import {
   deserializeCard,
   generatePath,
   LEVEL_THRESHOLDS,
-} from '../../engine/srs';
+} from '../../engine';
 import { Card } from '../../types';
 
 describe('getLevelFromXP', () => {
