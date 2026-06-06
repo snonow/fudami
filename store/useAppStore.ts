@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { Card, ReviewMode, SessionState, UserState } from '../types';
 import { getDueCards, updateCardFsrs, insertReview, getUserProgress, addXPAndReview, updateStreak } from '../db';
-import { scheduleReview, getFsrsRating, deserializeCard, serializeCard, createNewCard, getXPForRating } from '../engine/srs';
+import { scheduleReview, getFsrsRating, deserializeCard, serializeCard, createNewCard, getXPForRating } from '../engine';
 
 interface AppState {
   session: SessionState; user: UserState; isLoading: boolean;

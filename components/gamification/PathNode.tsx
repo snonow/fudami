@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors } from '../../constants/Colors';
+import { useTheme } from '../../../context/ThemeContext';
 
 interface PathNodeProps {
   level: string;
@@ -12,7 +12,7 @@ interface PathNodeProps {
 }
 
 export const PathNode: React.FC<PathNodeProps> = ({ isCompleted, isLocked, onPress, index }) => {
-  // Logic to alternate the node horizontal position for a wavy path
+  const { colors } = useTheme();
   const marginHorizontal = index % 2 === 0 ? 0 : 60;
 
   return (
@@ -27,19 +27,20 @@ export const PathNode: React.FC<PathNodeProps> = ({ isCompleted, isLocked, onPre
     >
       <View style={[
         styles.circle,
-        isCompleted && styles.completedCircle,
-        isLocked && styles.lockedCircle
+        { backgroundColor: colors.teal },
+        isCompleted && { backgroundColor: colors.success },
+        isLocked && { backgroundColor: colors.surfaceLight, borderColor: 'transparent' }
       ]}>
         {isLocked ? (
-          <Ionicons name="lock-closed" size={24} color={Colors.textMuted} />
+          <Ionicons name="lock-closed" size={24} color={colors.textMuted} />
         ) : isCompleted ? (
-          <Ionicons name="checkmark" size={28} color="#FFFFFF" />
+          <Ionicons name="checkmark" size={28} color={colors.white} />
         ) : (
-          <Ionicons name="star" size={28} color="#FFFFFF" />
+          <Ionicons name="star" size={28} color={colors.white} />
         )}
       </View>
-      <Text style={[styles.label, isLocked && styles.lockedText]}>
-        Étape {index + 1}
+      <Text style={[styles.label, { color: colors.text }, isLocked && { color: colors.textMuted }]}>
+        Step {index + 1}
       </Text>
     </TouchableOpacity>
   );
@@ -55,7 +56,6 @@ const styles = StyleSheet.create({
     width: 64,
     height: 64,
     borderRadius: 32,
-    backgroundColor: Colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
     boxShadow: '0px 4px 8px rgba(0, 0, 0, 0.3)',
@@ -63,23 +63,12 @@ const styles = StyleSheet.create({
     borderWidth: 4,
     borderColor: 'rgba(255, 255, 255, 0.2)',
   },
-  completedCircle: {
-    backgroundColor: Colors.success,
-  },
-  lockedCircle: {
-    backgroundColor: Colors.surfaceLight,
-    borderColor: 'transparent',
-  },
   locked: {
     opacity: 0.7,
   },
   label: {
     marginTop: 8,
-    color: Colors.text,
     fontWeight: 'bold',
     fontSize: 14,
-  },
-  lockedText: {
-    color: Colors.textMuted,
   },
 });

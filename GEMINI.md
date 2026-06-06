@@ -1,3 +1,5 @@
+> **Global architecture:** this app is the *front* of a larger platform. Before any cross-cutting work (schema, data ingestion, content model, sync, AI), read **[PLATFORM.md](PLATFORM.md)** — the system-level architecture & roadmap.
+
 <!-- code-review-graph MCP tools -->
 ## MCP Tools: code-review-graph
 

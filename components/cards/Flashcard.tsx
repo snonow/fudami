@@ -2,7 +2,7 @@ import React, { useRef, useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Animated, Pressable, Platform, Image } from 'react-native';
 import { Audio } from 'expo-av';
 import * as FileSystem from 'expo-file-system';
-import { Colors } from '../../constants/Colors';
+import { useTheme } from '../../../context/ThemeContext';
 
 interface FlashcardProps {
   frontKanji: string;
@@ -15,6 +15,7 @@ interface FlashcardProps {
 const MEDIA_DIR = `${FileSystem.documentDirectory}media/`;
 
 export const Flashcard: React.FC<FlashcardProps> = ({ frontKanji, frontKana, back, isFlipped, onFlip }) => {
+  const { colors } = useTheme();
   const animatedValue = useRef(new Animated.Value(0)).current;
   const [audio, setAudio] = useState<Audio.Sound | null>(null);
 
@@ -31,7 +32,6 @@ export const Flashcard: React.FC<FlashcardProps> = ({ frontKanji, frontKana, bac
     }
   }, [isFlipped, animatedValue, back]);
 
-  // Clean up audio on unmount
   useEffect(() => {
     return () => {
       if (audio) {
@@ -58,20 +58,18 @@ export const Flashcard: React.FC<FlashcardProps> = ({ frontKanji, frontKana, bac
   };
 
   const renderContent = (content: string) => {
-    // 1. Detect Images
     const imgMatch = content.match(/<img src="(.*?)"/);
     if (imgMatch) {
       const uri = MEDIA_DIR + imgMatch[1];
       return <Image source={{ uri }} style={styles.cardImage} resizeMode="contain" />;
     }
 
-    // 2. Clean text (remove audio tags and other HTML)
     const cleanText = content
       .replace(/\[sound:.*?\]/g, '')
       .replace(/<[^>]*>?/gm, '')
       .trim();
 
-    return <Text style={content.length > 20 ? styles.smallText : styles.largeText}>{cleanText}</Text>;
+    return <Text style={[content.length > 20 ? styles.smallText : styles.largeText, { color: colors.text }]}>{cleanText}</Text>;
   };
 
   const frontRotate = animatedValue.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '180deg'] });
@@ -80,129 +78,47 @@ export const Flashcard: React.FC<FlashcardProps> = ({ frontKanji, frontKana, bac
   return (
     <Pressable onPress={!isFlipped ? onFlip : undefined} style={styles.container}>
       {/* Front */}
-      <Animated.View style={[styles.card, { transform: [{ rotateY: frontRotate }] }]}>
-        <View style={styles.levelTag}>
-          <Text style={styles.levelTagText}>N5</Text>
+      <Animated.View style={[styles.card, { backgroundColor: colors.surface, transform: [{ rotateY: frontRotate }] }]}>
+        <View style={[styles.levelTag, { backgroundColor: colors.surfaceLight + '33' }]}>
+          <Text style={[styles.levelTagText, { color: colors.skyBlue }]}>JLPT N5</Text>
         </View>
-        <Text style={styles.kanji}>{frontKanji}</Text>
-        <Text style={styles.kana}>{frontKana}</Text>
-        <Text style={styles.hint}>Appuyer pour révéler</Text>
+        <Text style={[styles.kanji, { color: colors.white, fontFamily: 'KanjiStroke' }]}>{frontKanji}</Text>
+        <Text style={[styles.kana, { color: colors.textMuted }]}>{frontKana}</Text>
+        <Text style={[styles.hint, { color: colors.textMuted }]}>Tap to reveal</Text>
       </Animated.View>
 
       {/* Back */}
-      <Animated.View style={[styles.card, styles.cardBack, { transform: [{ rotateY: backRotate }] }]}>
-        <View style={[styles.levelTag, { backgroundColor: Colors.primary + '33' }]}>
-          <Text style={[styles.levelTagText, { color: Colors.primary }]}>Réponse</Text>
+      <Animated.View style={[styles.card, styles.cardBack, { backgroundColor: colors.surface, transform: [{ rotateY: backRotate }] }]}>
+        <View style={[styles.levelTag, { backgroundColor: colors.teal + '33' }]}>
+          <Text style={[styles.levelTagText, { color: colors.teal }]}>Meaning</Text>
         </View>
         <View style={styles.contentWrapper}>
           {renderContent(back)}
         </View>
-        <View style={styles.separator} />
-        <Text style={styles.kanaBack}>{frontKana}</Text>
-        <Text style={styles.hint}>Évaluez votre réponse</Text>
+        <View style={[styles.separator, { backgroundColor: colors.teal + '66' }]} />
+        <Text style={[styles.kanaBack, { color: colors.textMuted }]}>{frontKana}</Text>
+        <Text style={[styles.hint, { color: colors.textMuted }]}>Grade your answer</Text>
       </Animated.View>
     </Pressable>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    width: '100%',
-    height: 420,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+  container: { width: '100%', height: 440, alignItems: 'center', justifyContent: 'center' },
   card: {
-    position: 'absolute',
-    width: '100%',
-    height: '100%',
-    backgroundColor: Colors.surface,
-    borderRadius: 28,
-    padding: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backfaceVisibility: 'hidden',
-    boxShadow: '0px 12px 32px rgba(0, 0, 0, 0.5)',
-    elevation: 10,
-    borderWidth: 1,
-    borderColor: Colors.surfaceLight,
+    position: 'absolute', width: '100%', height: '100%', borderRadius: 32, padding: 24, alignItems: 'center', justifyContent: 'center',
+    backfaceVisibility: 'hidden', boxShadow: '0px 12px 32px rgba(0, 0, 0, 0.3)', elevation: 10, borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)'
   },
-  cardBack: {
-    backgroundColor: Colors.surfaceLight,
-    borderColor: Colors.primary + '33',
-  },
-  contentWrapper: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: '100%',
-    flex: 1,
-  },
-  levelTag: {
-    position: 'absolute',
-    top: 20,
-    left: 20,
-    backgroundColor: Colors.surfaceLight,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 8,
-  },
-  levelTagText: {
-    color: Colors.textMuted,
-    fontSize: 12,
-    fontWeight: '700',
-    letterSpacing: 0.5,
-  },
-  kanji: {
-    fontSize: 64,
-    fontWeight: '700',
-    color: Colors.text,
-    textAlign: 'center',
-    marginBottom: 12,
-  },
-  kana: {
-    fontSize: 22,
-    color: Colors.textMuted,
-    textAlign: 'center',
-    letterSpacing: 2,
-  },
-  largeText: {
-    fontSize: 36,
-    fontWeight: '700',
-    color: Colors.text,
-    textAlign: 'center',
-    marginBottom: 8,
-  },
-  smallText: {
-    fontSize: 24,
-    fontWeight: '600',
-    color: Colors.text,
-    textAlign: 'center',
-    marginBottom: 8,
-  },
-  cardImage: {
-    width: '100%',
-    height: 180,
-    marginBottom: 12,
-  },
-  separator: {
-    width: 40,
-    height: 2,
-    backgroundColor: Colors.primary + '66',
-    borderRadius: 1,
-    marginBottom: 12,
-  },
-  kanaBack: {
-    fontSize: 18,
-    color: Colors.textMuted,
-    textAlign: 'center',
-    letterSpacing: 2,
-  },
-  hint: {
-    position: 'absolute',
-    bottom: 22,
-    color: Colors.textMuted,
-    fontSize: 13,
-    opacity: 0.6,
-  },
+  cardBack: { },
+  contentWrapper: { alignItems: 'center', justifyContent: 'center', width: '100%', flex: 1 },
+  levelTag: { position: 'absolute', top: 24, left: 24, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12 },
+  levelTagText: { fontSize: 12, fontWeight: '800', letterSpacing: 1 },
+  kanji: { fontSize: 100, textAlign: 'center', marginBottom: 12 },
+  kana: { fontSize: 24, textAlign: 'center', letterSpacing: 2 },
+  largeText: { fontSize: 32, fontWeight: '700', textAlign: 'center', marginBottom: 8 },
+  smallText: { fontSize: 20, fontWeight: '600', textAlign: 'center', marginBottom: 8 },
+  cardImage: { width: '100%', height: 200, marginBottom: 12 },
+  separator: { width: 40, height: 3, borderRadius: 2, marginBottom: 12 },
+  kanaBack: { fontSize: 18, textAlign: 'center', letterSpacing: 2 },
+  hint: { position: 'absolute', bottom: 24, fontSize: 13, opacity: 0.6 },
 });
-
