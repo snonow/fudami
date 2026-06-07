@@ -2,7 +2,9 @@ import React, { useRef, useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Animated, Pressable, Platform, Image } from 'react-native';
 import { Audio } from 'expo-av';
 import * as FileSystem from 'expo-file-system';
-import { useTheme } from '../../../context/ThemeContext';
+import { useTheme } from '../../context/ThemeContext';
+import { SpeakButton } from '../ui/SpeakButton';
+import { useTts } from '../../hooks/useTts';
 
 interface FlashcardProps {
   frontKanji: string;
@@ -10,14 +12,25 @@ interface FlashcardProps {
   back: string;
   isFlipped: boolean;
   onFlip: () => void;
+  /** Word ID for pre-generated VOICEVOX audio lookup (optional). */
+  wordId?: string;
 }
 
 const MEDIA_DIR = `${FileSystem.documentDirectory}media/`;
 
-export const Flashcard: React.FC<FlashcardProps> = ({ frontKanji, frontKana, back, isFlipped, onFlip }) => {
+export const Flashcard: React.FC<FlashcardProps> = ({ frontKanji, frontKana, back, isFlipped, onFlip, wordId }) => {
   const { colors } = useTheme();
+  const { speak, speakWord, state: ttsState } = useTts();
   const animatedValue = useRef(new Animated.Value(0)).current;
   const [audio, setAudio] = useState<Audio.Sound | null>(null);
+
+  // Text to speak = kanji if available, otherwise kana
+  const readingText = frontKanji || frontKana;
+
+  // Use pre-generated VOICEVOX audio if wordId is provided, otherwise live TTS
+  const handleSpeak = () => wordId
+    ? speakWord(wordId, readingText)
+    : speak(readingText);
 
   useEffect(() => {
     Animated.spring(animatedValue, {
@@ -28,7 +41,12 @@ export const Flashcard: React.FC<FlashcardProps> = ({ frontKanji, frontKana, bac
     }).start();
 
     if (isFlipped) {
-      playAudio(back);
+      // Play legacy Anki audio if present, else speak via VOICEVOX / TTS
+      if (back.includes('[sound:')) {
+        playAudio(back);
+      } else {
+        handleSpeak();
+      }
     }
   }, [isFlipped, animatedValue, back]);
 
@@ -82,6 +100,18 @@ export const Flashcard: React.FC<FlashcardProps> = ({ frontKanji, frontKana, bac
         <View style={[styles.levelTag, { backgroundColor: colors.surfaceLight + '33' }]}>
           <Text style={[styles.levelTagText, { color: colors.skyBlue }]}>JLPT N5</Text>
         </View>
+        {/* TTS button — top-right, stops flip propagation */}
+        <Pressable
+          style={styles.ttsTopRight}
+          onPress={e => { e.stopPropagation?.(); handleSpeak(); }}
+        >
+          <SpeakButton
+            onPress={handleSpeak}
+            state={ttsState}
+            color={colors.skyBlue}
+            size={38}
+          />
+        </Pressable>
         <Text style={[styles.kanji, { color: colors.white, fontFamily: 'KanjiStroke' }]}>{frontKanji}</Text>
         <Text style={[styles.kana, { color: colors.textMuted }]}>{frontKana}</Text>
         <Text style={[styles.hint, { color: colors.textMuted }]}>Tap to reveal</Text>
@@ -91,6 +121,15 @@ export const Flashcard: React.FC<FlashcardProps> = ({ frontKanji, frontKana, bac
       <Animated.View style={[styles.card, styles.cardBack, { backgroundColor: colors.surface, transform: [{ rotateY: backRotate }] }]}>
         <View style={[styles.levelTag, { backgroundColor: colors.teal + '33' }]}>
           <Text style={[styles.levelTagText, { color: colors.teal }]}>Meaning</Text>
+        </View>
+        {/* TTS button — top-right on back face */}
+        <View style={styles.ttsTopRight}>
+          <SpeakButton
+            onPress={handleSpeak}
+            state={ttsState}
+            color={colors.teal}
+            size={38}
+          />
         </View>
         <View style={styles.contentWrapper}>
           {renderContent(back)}
@@ -121,4 +160,5 @@ const styles = StyleSheet.create({
   separator: { width: 40, height: 3, borderRadius: 2, marginBottom: 12 },
   kanaBack: { fontSize: 18, textAlign: 'center', letterSpacing: 2 },
   hint: { position: 'absolute', bottom: 24, fontSize: 13, opacity: 0.6 },
+  ttsTopRight: { position: 'absolute', top: 20, right: 20, zIndex: 10 },
 });

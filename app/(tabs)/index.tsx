@@ -2,27 +2,29 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, SafeAreaView, Pressable, useWindowDimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAppStore } from '../../store/useAppStore';
-import { useTheme } from '../../../context/ThemeContext';
+import { useTheme } from '../../context/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
 import { generatePath, getXPForNextLevel } from '../../engine';
 import { PathNode } from '../../components/gamification/PathNode';
 import { ProgressBar } from '../../components/ui/ProgressBar';
-import { getDueCards, getWeeklyActivity, getRetentionRate } from '../../db';
+import { getDueStudyCards } from '../../data/study/StudyRepository';
+import { getWeeklyActivity, getRetentionRate } from '../../db';
 import { AnalyticsHub } from '../../components/ui/AnalyticsHub';
+import { StudyCard } from '../../data/study/types';
 
 export default function HomeHub() {
   const { user, loadSession, loadUser } = useAppStore();
   const { colors, mode, toggleTheme } = useTheme();
   const router = useRouter();
   const { width } = useWindowDimensions();
-  const [cards, setCards] = useState<any[]>([]);
+  const [cards, setCards] = useState<StudyCard[]>([]);
   const [analytics, setAnalytics] = useState({ weekly: [], rate: 0 });
 
   const isDesktop = width > 768;
 
   useEffect(() => {
     loadUser();
-    getDueCards(100, 100).then(res => res.length && setCards(res));
+    getDueStudyCards(100).then(res => res.ok && res.data.length && setCards(res.data));
     Promise.all([getWeeklyActivity(), getRetentionRate()]).then(([weekly, rate]) => {
       setAnalytics({ weekly: weekly as any, rate });
     });
@@ -77,19 +79,29 @@ export default function HomeHub() {
 
         {/* Navigation Grid */}
         <View style={[styles.grid, isDesktop && styles.desktopGrid]}>
-          <HubCard 
-            title="My Path" 
-            icon="map-outline" 
-            onPress={() => {}} 
+          <HubCard
+            title="My Path"
+            icon="map-outline"
+            onPress={() => {}}
             colors={colors}
           />
-          <HubCard 
-            title="Settings" 
-            icon="settings-outline" 
+          <HubCard
+            title="Settings"
+            icon="settings-outline"
             onPress={() => router.push('/(tabs)/profile')}
             colors={colors}
           />
         </View>
+
+        {/* Dev-only: TTS test screen */}
+        {__DEV__ && (
+          <HubCard
+            title="TTS Test"
+            icon="volume-high-outline"
+            onPress={() => router.push('/tts-test' as any)}
+            colors={colors}
+          />
+        )}
 
         {/* Learning Path */}
         <Text style={[styles.sectionTitle, { color: colors.text }]}>Learning Path</Text>

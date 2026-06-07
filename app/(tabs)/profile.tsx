@@ -1,18 +1,38 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, SafeAreaView, ScrollView, Switch, Alert, ActivityIndicator, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useTheme } from '../../../context/ThemeContext';
+import { useTheme } from '../../context/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
 import { StatCard } from '../../components/cards/StatCard';
 import { Button } from '../../components/ui/Button';
 import { useAppStore } from '../../store/useAppStore';
 import { ankiImporter } from '../../engine/AnkiImporter';
 
+import { getPackManifest, refreshPack } from '../../data/content/ContentRepository';
+import { PackManifest, contentErrorMessage } from '../../data/content/types';
+
 export default function ProfileScreen() {
   const { user, session } = useAppStore();
   const { colors } = useTheme();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [manifest, setManifest] = useState<PackManifest | null>(null);
+
+  React.useEffect(() => {
+    getPackManifest().then(setManifest);
+  }, []);
+
+  const onUpdatePack = async () => {
+    setLoading(true);
+    const result = await refreshPack();
+    if (result.ok) {
+      setManifest(result.data);
+      Alert.alert('Success', `Pack updated to version ${result.data.version}`);
+    } else {
+      Alert.alert('Error', contentErrorMessage(result.error));
+    }
+    setLoading(false);
+  };
 
   const onImport = async () => {
     setLoading(true);
@@ -52,6 +72,27 @@ export default function ProfileScreen() {
             <StatCard label="Reviews" value={user.totalReviews} icon="albums-outline" iconColor={colors.teal} />
             <StatCard label="Level" value={user.level} icon="trending-up" iconColor={colors.success} />
           </View>
+        </View>
+
+        <Text style={[styles.title, { color: colors.text }]}>Content Pack</Text>
+        <View style={[styles.card, { backgroundColor: colors.surface }]}>
+          <View style={[styles.row, { marginBottom: 15 }]}>
+            <View>
+              <Text style={[styles.label, { color: colors.text }]}>
+                {manifest ? `Version ${manifest.version}` : 'No pack installed'}
+              </Text>
+              <Text style={[styles.sub, { color: colors.textMuted }]}>
+                {manifest ? `${manifest.counts.words} words, ${manifest.counts.kanji} kanji` : 'Using bundled seed data'}
+              </Text>
+            </View>
+            <Ionicons name="cloud-download-outline" size={24} color={colors.teal} />
+          </View>
+          <Button 
+            title={manifest ? "Update Pack" : "Download Pack"} 
+            variant="outline" 
+            onPress={onUpdatePack} 
+            loading={loading}
+          />
         </View>
 
         <Text style={[styles.title, { color: colors.text }]}>Actions</Text>

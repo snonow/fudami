@@ -1,18 +1,24 @@
 import { create } from 'zustand';
-import { Card, ReviewMode, SessionState, UserState } from '../types';
-import { getDueCards, updateCardFsrs, insertReview, getUserProgress, addXPAndReview, updateStreak } from '../db';
+import { ReviewMode, SessionState, UserState } from '../types';
+import { StudyCard } from '../data/study/types';
+import { getDueStudyCards, getNewStudyCards } from '../data/study/StudyRepository';
+import { updateCardFsrs, insertReview, getUserProgress, addXPAndReview, updateStreak } from '../db';
 import { scheduleReview, getFsrsRating, deserializeCard, serializeCard, createNewCard, getXPForRating } from '../engine';
 
+interface AppSessionState extends Omit<SessionState, 'cards'> {
+  cards: StudyCard[];
+}
+
 interface AppState {
-  session: SessionState; user: UserState; isLoading: boolean;
+  session: AppSessionState; user: UserState; isLoading: boolean;
   loadUser: () => Promise<void>;
   loadSession: (level?: string) => Promise<void>;
   gradeCard: (r: 'again' | 'hard' | 'good' | 'easy') => Promise<void>;
   endSession: () => void;
-  startSession: (cards: Card[], type: 'cards' | 'minutes', goal: number) => void;
+  startSession: (cards: StudyCard[], type: 'cards' | 'minutes', goal: number) => void;
 }
 
-const DEF_S: SessionState = { isActive: false, cards: [], currentIndex: 0, mode: 'flip', xpEarned: 0, reviewedCount: 0, goalType: 'cards', goalValue: 0, progress: 0, lastModeByCardId: {} };
+const DEF_S: AppSessionState = { isActive: false, cards: [], currentIndex: 0, mode: 'flip', xpEarned: 0, reviewedCount: 0, goalType: 'cards', goalValue: 0, progress: 0, lastModeByCardId: {} };
 const DEF_U: UserState = { xpTotal: 0, level: 1, streakDays: 0, totalReviews: 0, completedLevels: [] };
 
 const pickMode = (last?: ReviewMode): ReviewMode => {
@@ -29,7 +35,16 @@ export const useAppStore = create<AppState>((set, get) => ({
   loadUser: async () => set({ user: await getUserProgress() }),
   loadSession: async (level) => {
     set({ isLoading: true });
-    const cards = await getDueCards(20, 10, level);
+    
+    // On récupère les cartes dues et les nouvelles cartes séparément
+    const dueResult = await getDueStudyCards(20);
+    const newResult = await getNewStudyCards(level || 'n5', 10);
+    
+    const cards = [
+      ...(dueResult.ok ? dueResult.data : []),
+      ...(newResult.ok ? newResult.data : [])
+    ].slice(0, 20);
+
     const streak = await updateStreak();
     if (!cards.length) return set({ isLoading: false, user: { ...get().user, streakDays: streak } });
     const m = pickMode();
@@ -39,14 +54,23 @@ export const useAppStore = create<AppState>((set, get) => ({
     const { session, user } = get();
     const card = session.cards[session.currentIndex];
     if (!card) return;
-    const res = scheduleReview(card.fsrs_state ? deserializeCard(card.fsrs_state) : createNewCard(), getFsrsRating({ again: 1, hard: 2, good: 3, easy: 4 }[r]));
+
+    const fsrsState = card.progress.fsrs_state;
+    const res = scheduleReview(fsrsState ? deserializeCard(fsrsState) : createNewCard(), getFsrsRating({ again: 1, hard: 2, good: 3, easy: 4 }[r]));
     const sState = serializeCard(res.card), due = res.card.due.toISOString();
+    
     await updateCardFsrs(card.id, sState, due);
     const xp = getXPForRating(r, user.streakDays);
     await insertReview(card.id, { again: 1, hard: 2, good: 3, easy: 4 }[r], session.mode, xp);
+    
     const newUser = await addXPAndReview(xp), nextIdx = session.currentIndex + 1, revCount = session.reviewedCount + 1;
     let cards = [...session.cards];
-    if (r === 'again') cards.splice(Math.min(nextIdx + 3, cards.length), 0, { ...card, fsrs_state: sState, due_date: due });
+    if (r === 'again') {
+      cards.splice(Math.min(nextIdx + 3, cards.length), 0, { 
+        ...card, 
+        progress: { ...card.progress, fsrs_state: sState, due_date: due } 
+      });
+    }
     const nextCard = cards[nextIdx], nextM = nextCard ? pickMode(session.lastModeByCardId[nextCard.id]) : session.mode;
     set({ user: { ...newUser, completedLevels: user.completedLevels }, session: { ...session, cards, currentIndex: nextIdx, reviewedCount: revCount, isActive: nextIdx < cards.length, progress: Math.min(revCount / session.goalValue, 1), xpEarned: session.xpEarned + xp, mode: nextM, lastModeByCardId: nextCard ? { ...session.lastModeByCardId, [nextCard.id]: nextM } : session.lastModeByCardId } });
   },
