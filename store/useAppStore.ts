@@ -13,9 +13,24 @@ interface AppState {
   session: AppSessionState; user: UserState; isLoading: boolean;
   loadUser: () => Promise<void>;
   loadSession: (level?: string) => Promise<void>;
-  gradeCard: (r: 'again' | 'hard' | 'good' | 'easy') => Promise<void>;
+  gradeCard: (r: 'again' | 'hard' | 'good' | 'easy', token?: string) => Promise<void>;
   endSession: () => void;
   startSession: (cards: StudyCard[], type: 'cards' | 'minutes', goal: number) => void;
+}
+
+const API_BASE = "https://fudami-gateway.your-subdomain.workers.dev"; // TODO: Update after deployment
+
+async function backgroundSync(user: UserState, token?: string) {
+  if (!token) return;
+  try {
+    fetch(`${API_BASE}/user/sync`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify(user)
+    }).catch(e => console.warn('[Sync] Background push failed:', e));
+  } catch (e) {
+    // Silent fail for background sync
+  }
 }
 
 const DEF_S: AppSessionState = { isActive: false, cards: [], currentIndex: 0, mode: 'flip', xpEarned: 0, reviewedCount: 0, goalType: 'cards', goalValue: 0, progress: 0, lastModeByCardId: {} };
@@ -50,7 +65,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     const m = pickMode();
     set({ isLoading: false, user: { ...get().user, streakDays: streak }, session: { ...DEF_S, isActive: true, cards, goalValue: cards.length, mode: m, lastModeByCardId: { [cards[0].id]: m } } });
   },
-  gradeCard: async (r) => {
+  gradeCard: async (r, token) => {
     const { session, user } = get();
     const card = session.cards[session.currentIndex];
     if (!card) return;
@@ -71,6 +86,10 @@ export const useAppStore = create<AppState>((set, get) => ({
         progress: { ...card.progress, fsrs_state: sState, due_date: due } 
       });
     }
+
+    // Trigger background sync (silent)
+    backgroundSync(newUser, token);
+
     const nextCard = cards[nextIdx], nextM = nextCard ? pickMode(session.lastModeByCardId[nextCard.id]) : session.mode;
     set({ user: { ...newUser, completedLevels: user.completedLevels }, session: { ...session, cards, currentIndex: nextIdx, reviewedCount: revCount, isActive: nextIdx < cards.length, progress: Math.min(revCount / session.goalValue, 1), xpEarned: session.xpEarned + xp, mode: nextM, lastModeByCardId: nextCard ? { ...session.lastModeByCardId, [nextCard.id]: nextM } : session.lastModeByCardId } });
   },
