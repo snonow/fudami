@@ -40,6 +40,14 @@ yarn-error.*
 # local env files
 .env*.local
 
+# Content pack key — NEVER commit this file
+# Copy constants/packKey.example.ts → constants/packKey.ts and fill in the key
+constants/packKey.ts
+
+# Google Cloud TTS key — NEVER commit this file
+# Copy constants/ttsKey.example.ts → constants/ttsKey.ts and fill in the key
+constants/ttsKey.ts
+
 # typescript
 *.tsbuildinfo
 

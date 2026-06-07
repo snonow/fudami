@@ -29,7 +29,7 @@ export const feedback = {
   playError: () => Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error),
 };
 
-export const generatePath = (deck: string, cards: Card[], completedIds: string[]): PathLevel[] => {
+export const generatePath = (deck: string, cards: { id: string }[], completedIds: string[]): PathLevel[] => {
   const size = 15; return Array.from({ length: Math.ceil(cards.length / size) }, (_, i) => {
     const id = `${deck}_level_${i + 1}`;
     return { id, title: `Level ${i + 1}`, cardIds: cards.slice(i * size, (i + 1) * size).map(c => c.id), isCompleted: completedIds.includes(id), isLocked: i > 0 && !completedIds.includes(`${deck}_level_${i}`) };

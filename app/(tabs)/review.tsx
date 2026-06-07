@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, SafeAreaView, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useTheme } from '../../../context/ThemeContext';
+import { useTheme } from '../../context/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
 import { Flashcard } from '../../components/cards/Flashcard';
 import { Button } from '../../components/ui/Button';
@@ -50,7 +50,13 @@ export default function ReviewScreen() {
       </View>
 
       <View style={styles.cardContainer}>
-        <Flashcard frontKanji={card.front_kanji} frontKana={card.front_kana} back={card.back} isFlipped={flipped} onFlip={() => { setFlipped(true); feedback.playFlip(); }} />
+        <Flashcard 
+          frontKanji={card.content.kanji || ''} 
+          frontKana={card.content.kana} 
+          back={card.content.meanings.join(', ')} 
+          isFlipped={flipped} 
+          onFlip={() => { setFlipped(true); feedback.playFlip(); }} 
+        />
       </View>
       <View style={styles.actionBar}>
         {flipped ? (

@@ -6,7 +6,9 @@
         "code-review-graph",
         "serve"
       ],
-      "cwd": "/Users/arnow/Documents/Japonais/fudami-project/fudami-front"
+      "cwd": "/Users/arnow/Documents/Japonais/fudami-project/fudami-front",
+      "type": "stdio",
+      "env": []
     }
   }
 }

@@ -5,6 +5,6 @@ set -euo pipefail
 
 cat > /dev/null || true
 
-code-review-graph update --skip-flows --repo "/Users/arnow/Documents/Hobby/fudami" >/dev/null 2>&1 || true
+code-review-graph update --skip-flows --repo "/Users/arnow/Documents/Japonais/fudami-project/fudami-front" >/dev/null 2>&1 || true
 echo '{"suppressOutput": true}'
 exit 0

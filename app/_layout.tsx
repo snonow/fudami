@@ -3,6 +3,7 @@ import { View, ActivityIndicator } from 'react-native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { initDb } from '../db';
+import { initContent } from '../data/content/ContentRepository';
 import { useAppStore } from '../store/useAppStore';
 import { Colors } from '../constants/Colors';
 
@@ -33,7 +34,10 @@ export default function RootLayout() {
 
   useEffect(() => {
     async function init() {
-      await initDb();
+      await Promise.all([
+        initDb(),
+        initContent()
+      ]);
       await loadUser();
       setDbReady(true);
     }
