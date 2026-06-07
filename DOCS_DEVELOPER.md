@@ -44,3 +44,7 @@ Allows users to import their own `.apkg` decks:
 
 - **Binary Blobs**: Always use `chunked` conversion when moving data between JS and Native layers via `base64`.
 - **3D Rendering**: Limit `Canvas` re-renders. Avoid re-creating `Geometry`, `Material`, or `Texture` objects within the render loop.
+
+## Browser Limitations
+
+- **Private / Incognito Mode**: On the web, `expo-sqlite` relies on IndexedDB via a web worker. Many browsers (like Safari and Firefox) restrict IndexedDB access in Private mode. The app includes a specialized error handler in `RootLayout` to notify users to switch to a standard window if initialization fails due to storage restrictions.
