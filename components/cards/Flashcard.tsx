@@ -119,24 +119,29 @@ export const Flashcard: React.FC<FlashcardProps> = ({ frontKanji, frontKana, bac
 
       {/* Back */}
       <Animated.View style={[styles.card, styles.cardBack, { backgroundColor: colors.surface, transform: [{ rotateY: backRotate }] }]}>
-        <View style={[styles.levelTag, { backgroundColor: colors.teal + '33' }]}>
-          <Text style={[styles.levelTagText, { color: colors.teal }]}>Meaning</Text>
+        <View style={[styles.levelTag, { backgroundColor: colors.palette.softAizomeIndigo + '33' }]}>
+          <Text style={[styles.levelTagText, { color: colors.palette.softAizomeIndigo }]}>Meaning</Text>
         </View>
-        {/* TTS button — top-right on back face */}
+        
         <View style={styles.ttsTopRight}>
           <SpeakButton
             onPress={handleSpeak}
             state={ttsState}
-            color={colors.teal}
+            color={colors.palette.softAizomeIndigo}
             size={38}
           />
         </View>
+
         <View style={styles.contentWrapper}>
-          {renderContent(back)}
+          <View style={styles.meaningContainer}>
+            {renderContent(back)}
+          </View>
+          
+          <View style={[styles.separator, { backgroundColor: colors.palette.softAizomeIndigo + '44' }]} />
+          
+          <Text style={[styles.kanaBack, { color: colors.text }]}>{frontKana}</Text>
+          <Text style={[styles.hintRelative, { color: colors.textMuted }]}>Grade your answer</Text>
         </View>
-        <View style={[styles.separator, { backgroundColor: colors.teal + '66' }]} />
-        <Text style={[styles.kanaBack, { color: colors.textMuted }]}>{frontKana}</Text>
-        <Text style={[styles.hint, { color: colors.textMuted }]}>Grade your answer</Text>
       </Animated.View>
     </Pressable>
   );
@@ -149,7 +154,8 @@ const styles = StyleSheet.create({
     backfaceVisibility: 'hidden', boxShadow: '0px 12px 32px rgba(0, 0, 0, 0.3)', elevation: 10, borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)'
   },
   cardBack: { },
-  contentWrapper: { alignItems: 'center', justifyContent: 'center', width: '100%', flex: 1 },
+  contentWrapper: { alignItems: 'center', justifyContent: 'center', width: '100%', flex: 1, paddingTop: 60 },
+  meaningContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   levelTag: { position: 'absolute', top: 24, left: 24, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12 },
   levelTagText: { fontSize: 12, fontWeight: '800', letterSpacing: 1 },
   kanji: { fontSize: 100, textAlign: 'center', marginBottom: 12 },
@@ -157,8 +163,9 @@ const styles = StyleSheet.create({
   largeText: { fontSize: 32, fontWeight: '700', textAlign: 'center', marginBottom: 8 },
   smallText: { fontSize: 20, fontWeight: '600', textAlign: 'center', marginBottom: 8 },
   cardImage: { width: '100%', height: 200, marginBottom: 12 },
-  separator: { width: 40, height: 3, borderRadius: 2, marginBottom: 12 },
-  kanaBack: { fontSize: 18, textAlign: 'center', letterSpacing: 2 },
+  separator: { width: 60, height: 2, borderRadius: 2, marginVertical: 16 },
+  kanaBack: { fontSize: 22, textAlign: 'center', letterSpacing: 2, fontWeight: '500' },
   hint: { position: 'absolute', bottom: 24, fontSize: 13, opacity: 0.6 },
+  hintRelative: { fontSize: 13, opacity: 0.6, marginTop: 8 },
   ttsTopRight: { position: 'absolute', top: 20, right: 20, zIndex: 10 },
 });

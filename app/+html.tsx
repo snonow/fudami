@@ -27,8 +27,8 @@ export default function Root({ children }: { children: React.ReactNode }) {
         {headNodes}
 
         {/* Add any additional <head> elements that you want globally available on web... */}
-        <link rel="icon" href="/fudami-front/favicon.png" media="(prefers-color-scheme: dark)" />
-        <link rel="icon" href="/fudami-front/favicon-light.png" media="(prefers-color-scheme: light)" />
+        <link rel="icon" href="favicon.png" media="(prefers-color-scheme: dark)" />
+        <link rel="icon" href="favicon-light.png" media="(prefers-color-scheme: light)" />
       </head>
       <body {...bodyAttributes}>
         {children}

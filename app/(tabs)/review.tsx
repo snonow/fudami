@@ -19,10 +19,10 @@ export default function ReviewScreen() {
   useEffect(() => { if (!session.isActive) loadSession(); }, []);
   useEffect(() => setFlipped(false), [session.currentIndex]);
 
-  const onGrade = async (r: 'again' | 'hard' | 'good' | 'easy') => {
+  const onGrade = async (r: 'again' | 'good') => {
     if (grading) return;
     setGrading(true);
-    r === 'again' ? feedback.playError() : r === 'hard' ? feedback.playWarning() : feedback.playSuccess();
+    r === 'again' ? feedback.playError() : feedback.playSuccess();
     await gradeCard(r);
     setGrading(false);
   };
@@ -32,7 +32,6 @@ export default function ReviewScreen() {
     <SafeAreaView style={[styles.container, styles.centered, { backgroundColor: colors.background }]}>
       <Text style={{ fontSize: 50 }}>🎉</Text>
       <Text style={[styles.doneText, { color: colors.text }]}>Session complete!</Text>
-      <Text style={[styles.xpText, { color: colors.warning }]}>+{session.xpEarned} XP</Text>
       <Button title="Return to Hub" onPress={() => router.back()} style={{ marginTop: 20 }} />
     </SafeAreaView>
   );
@@ -60,28 +59,27 @@ export default function ReviewScreen() {
       </View>
       <View style={styles.actionBar}>
         {flipped ? (
-          <View style={{ gap: 10 }}>
-            <View style={{ flexDirection: 'row', gap: 10 }}>
-              <GradeBtn label="Again" xp="+0" color={colors.error} onPress={() => onGrade('again')} />
-              <GradeBtn label="Hard" xp="+5" color={colors.warning} onPress={() => onGrade('hard')} />
-            </View>
-            <View style={{ flexDirection: 'row', gap: 10 }}>
-              <GradeBtn label="Good" xp="+10" color={colors.teal} onPress={() => onGrade('good')} />
-              <GradeBtn label="Easy" xp="+15" color={colors.success} onPress={() => onGrade('easy')} />
-            </View>
+          <View style={styles.gradeContainer}>
+            <Pressable 
+              style={[styles.gradeBtn, { backgroundColor: colors.palette.softHankoRed }]} 
+              onPress={() => onGrade('again')}
+            >
+              <Ionicons name="close-circle" size={24} color={colors.white} />
+              <Text style={styles.gradeText}>Forgot</Text>
+            </Pressable>
+            <Pressable 
+              style={[styles.gradeBtn, { backgroundColor: colors.palette.softMatchaGreen }]} 
+              onPress={() => onGrade('good')}
+            >
+              <Ionicons name="checkmark-circle" size={24} color={colors.white} />
+              <Text style={styles.gradeText}>Got it</Text>
+            </Pressable>
           </View>
         ) : <Button title="Show answer" onPress={() => { setFlipped(true); feedback.playFlip(); }} style={styles.revealBtn} />}
       </View>
     </SafeAreaView>
   );
 }
-
-const GradeBtn = ({ label, xp, color, onPress }: any) => (
-  <View style={[styles.gradeBtn, { borderColor: color + '55' }]}>
-    <Button title={label} onPress={onPress} style={{ backgroundColor: color + '22', flex: 1 }} />
-    <Text style={{ fontSize: 10, color, fontWeight: 'bold', paddingBottom: 4 }}>{xp} XP</Text>
-  </View>
-);
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
@@ -92,7 +90,8 @@ const styles = StyleSheet.create({
   cardContainer: { flex: 1, padding: 20, justifyContent: 'center' },
   actionBar: { padding: 20, paddingBottom: 40, minHeight: 140, justifyContent: 'flex-end' },
   revealBtn: { width: '100%', paddingVertical: 18 },
-  gradeBtn: { flex: 1, borderRadius: 12, borderWidth: 1, overflow: 'hidden', alignItems: 'center' },
+  gradeContainer: { flexDirection: 'row', gap: 16, width: '100%' },
+  gradeBtn: { flex: 1, height: 60, borderRadius: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, elevation: 4, boxShadow: '0 4px 12px rgba(0,0,0,0.2)' },
+  gradeText: { color: '#FFF', fontSize: 18, fontWeight: '700' },
   doneText: { fontSize: 24, fontWeight: 'bold' },
-  xpText: { fontSize: 18, fontWeight: 'bold' },
 });

@@ -4,7 +4,7 @@ import { useRouter } from 'expo-router';
 import { useAppStore } from '../../store/useAppStore';
 import { useTheme } from '../../context/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
-import { generatePath, getXPForNextLevel } from '../../engine';
+import { generatePath } from '../../engine';
 import { PathNode } from '../../components/gamification/PathNode';
 import { ProgressBar } from '../../components/ui/ProgressBar';
 import { StudyRepository } from '../../data';
@@ -18,7 +18,7 @@ export default function HomeHub() {
   const router = useRouter();
   const { width } = useWindowDimensions();
   const [cards, setCards] = useState<StudyCard[]>([]);
-  const [analytics, setAnalytics] = useState({ weekly: [], rate: 0 });
+  const [analytics, setAnalytics] = useState({ weekly: [] as any[], rate: 0 });
 
   const isDesktop = width > 768;
 
@@ -30,16 +30,17 @@ export default function HomeHub() {
     });
   }, []);
 
-  const xp = user?.xpTotal ?? 0;
-  const { current, next, level } = getXPForNextLevel(xp);
-  const progress = next > current ? (xp - current) / (next - current) : 1;
-  const path = generatePath('JLPT N5', cards, user?.completedLevels ?? []);
-
   const handleStart = async (c?: any[]) => {
     if (c) useAppStore.getState().startSession(c, 'cards', c.length);
     else await loadSession();
     router.push('/(tabs)/review');
   };
+
+  const dueCount = cards.length;
+  const dailyGoal = 50; // Mock goal
+  const dailyProgress = Math.min((analytics.weekly[analytics.weekly.length - 1] as any)?.count / dailyGoal, 1) || 0;
+
+  const path = generatePath('JLPT N5', cards, user?.completedLevels ?? []);
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
@@ -48,8 +49,10 @@ export default function HomeHub() {
         {/* Top Hub Bar */}
         <View style={styles.hubBar}>
           <View>
-            <Text style={[styles.greeting, { color: colors.text }]}>Hello!</Text>
-            <Text style={[styles.lvlText, { color: colors.teal }]}>Level {level}</Text>
+            <Text style={[styles.greeting, { color: colors.text }]}>Good morning!</Text>
+            <Text style={[styles.streakText, { color: colors.palette.softHankoRed }]}>
+              <Ionicons name="flame" size={16} /> {user.streakDays} day streak
+            </Text>
           </View>
           <Pressable onPress={toggleTheme} style={styles.themeToggle}>
             <Ionicons name={mode === 'light' ? 'moon' : 'sunny'} size={24} color={colors.text} />
@@ -58,19 +61,21 @@ export default function HomeHub() {
 
         {/* Hero Section */}
         <View style={[styles.hero, { backgroundColor: colors.surface }]}>
-          <Text style={[styles.heroTitle, { color: colors.text }]}>Keep moving forward</Text>
-          <ProgressBar progress={progress} height={12} color={colors.teal} />
-          <View style={styles.xpInfo}>
-            <Text style={[styles.xpText, { color: colors.textMuted }]}>{xp} / {next} XP</Text>
-            <Text style={[styles.cardsLeft, { color: colors.text }]}>{cards.length} cards due</Text>
+          <Text style={[styles.heroTitle, { color: colors.text }]}>Daily Goal</Text>
+          <ProgressBar progress={dailyProgress} height={12} color={colors.palette.softMatchaGreen} />
+          <View style={styles.goalInfo}>
+            <Text style={[styles.goalText, { color: colors.textMuted }]}>
+              {(analytics.weekly[analytics.weekly.length - 1] as any)?.count || 0} / {dailyGoal} cards
+            </Text>
+            <Text style={[styles.cardsLeft, { color: colors.text }]}>{dueCount} due now</Text>
           </View>
           
           <Pressable 
-            style={({ pressed }) => [styles.mainBtn, { backgroundColor: colors.teal }, pressed && styles.btnPressed]}
+            style={({ pressed }) => [styles.mainBtn, { backgroundColor: colors.palette.softHankoRed }, pressed && styles.btnPressed]}
             onPress={() => handleStart()}
           >
             <Ionicons name="play" size={24} color={colors.white} />
-            <Text style={styles.mainBtnText}>Resume Session</Text>
+            <Text style={styles.mainBtnText}>Start Learning</Text>
           </Pressable>
         </View>
 
@@ -80,8 +85,8 @@ export default function HomeHub() {
         {/* Navigation Grid */}
         <View style={[styles.grid, isDesktop && styles.desktopGrid]}>
           <HubCard
-            title="My Path"
-            icon="map-outline"
+            title="Import Deck"
+            icon="cloud-upload-outline"
             onPress={() => {}}
             colors={colors}
           />
@@ -92,16 +97,6 @@ export default function HomeHub() {
             colors={colors}
           />
         </View>
-
-        {/* Dev-only: TTS test screen */}
-        {__DEV__ && (
-          <HubCard
-            title="TTS Test"
-            icon="volume-high-outline"
-            onPress={() => router.push('/tts-test' as any)}
-            colors={colors}
-          />
-        )}
 
         {/* Learning Path */}
         <Text style={[styles.sectionTitle, { color: colors.text }]}>Learning Path</Text>
@@ -125,11 +120,11 @@ export default function HomeHub() {
 
 const HubCard = ({ title, icon, onPress, colors }: any) => (
   <Pressable 
-    style={({ pressed }) => [styles.card, { backgroundColor: colors.surface + '80' }, pressed && styles.btnPressed]} 
+    style={({ pressed }) => [styles.card, { backgroundColor: colors.surface }, pressed && styles.btnPressed]} 
     onPress={onPress}
   >
-    <View style={[styles.iconCircle, { backgroundColor: colors.teal + '20' }]}>
-      <Ionicons name={icon} size={24} color={colors.teal} />
+    <View style={[styles.iconCircle, { backgroundColor: colors.palette.softAizomeIndigo + '20' }]}>
+      <Ionicons name={icon} size={24} color={colors.palette.softAizomeIndigo} />
     </View>
     <Text style={[styles.cardTitle, { color: colors.text }]}>{title}</Text>
   </Pressable>
@@ -141,12 +136,12 @@ const styles = StyleSheet.create({
   desktopContent: { maxWidth: 800, alignSelf: 'center', width: '100%' },
   hubBar: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 32 },
   greeting: { fontSize: 28, fontFamily: 'NotoSansJP_700Bold', letterSpacing: -0.5 },
-  lvlText: { fontSize: 14, fontFamily: 'NotoSansJP_500Medium', marginTop: 2 },
+  streakText: { fontSize: 14, fontFamily: 'NotoSansJP_700Bold', marginTop: 4, flexDirection: 'row', alignItems: 'center' },
   themeToggle: { width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(128,128,128,0.1)', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)' },
   hero: { borderRadius: 32, padding: 32, marginBottom: 32, boxShadow: '0px 15px 30px rgba(0,0,0,0.2)', elevation: 8, borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)' },
   heroTitle: { fontSize: 22, fontFamily: 'NotoSansJP_700Bold', marginBottom: 24, letterSpacing: -0.5 },
-  xpInfo: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 14, marginBottom: 32 },
-  xpText: { fontSize: 13, fontFamily: 'NotoSansJP_400Regular' },
+  goalInfo: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 14, marginBottom: 32 },
+  goalText: { fontSize: 13, fontFamily: 'NotoSansJP_400Regular' },
   cardsLeft: { fontSize: 13, fontFamily: 'NotoSansJP_700Bold' },
   mainBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 16, borderRadius: 24, gap: 12 },
   mainBtnText: { color: '#FFF', fontSize: 16, fontFamily: 'NotoSansJP_700Bold', letterSpacing: 1 },
