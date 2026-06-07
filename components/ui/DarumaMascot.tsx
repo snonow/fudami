@@ -46,11 +46,12 @@ function DarumaModel({ url, mood }: { url: string; mood: MascotMood }) {
 
   // Determine active texture based on mood and blink state
   const activeTexture = useMemo(() => {
-    if (mood === 'happy') return isBlinking ? textures.happyBlink : textures.happy;
-    if (mood === 'sad') return isBlinking ? textures.sadBlink : textures.sad;
-    // 'thinking' uses bored for now
-    return isBlinking ? textures.boredBlink : textures.bored;
-  }, [mood, isBlinking, textures]);
+    const { bored, boredBlink, happy, happyBlink, sad, sadBlink } = textures;
+    if (mood === 'happy') return isBlinking ? happyBlink : happy;
+    if (mood === 'sad') return isBlinking ? sadBlink : sad;
+    // 'thinking' also uses the 'bored' look for now
+    return isBlinking ? boredBlink : bored;
+  }, [mood, isBlinking, textures.bored, textures.boredBlink, textures.happy, textures.happyBlink, textures.sad, textures.sadBlink]);
 
   // Handle expressive blinking
   useEffect(() => {
@@ -108,9 +109,9 @@ function DarumaModel({ url, mood }: { url: string; mood: MascotMood }) {
     <group ref={groupRef} scale={0.08}>
       <group ref={modelRef}>
         <primitive object={obj} />
-        {/* The "Digital Mask" Sticker */}
-        <mesh position={[0, 0, 1.2]} rotation={[0, 0, 0]}>
-          <planeGeometry args={[12, 12]} />
+        {/* The "Digital Mask" Sticker - Reduced size for trimmed textures */}
+        <mesh position={[0, 0.2, 1.25]} rotation={[0, 0, 0]}>
+          <planeGeometry args={[9, 9]} />
           <meshStandardMaterial 
             map={activeTexture} 
             transparent 
@@ -123,12 +124,12 @@ function DarumaModel({ url, mood }: { url: string; mood: MascotMood }) {
   );
 }
 
-export const DarumaMascot = React.memo(function DarumaMascot({ mood = 'bored' }: { mood?: MascotMood }) {
+export const DarumaMascot = React.memo(function DarumaMascot({ mood = 'bored', size = 320 }: { mood?: MascotMood; size?: number }) {
   const { width, height } = useWindowDimensions();
   const isDesktop = width > 768;
   
-  // Responsive sizing: MASSIVE on desktop, optimized on mobile
-  const size = isDesktop ? Math.min(height * 0.75, 800) : Math.min(height * 0.45, width * 0.9);
+  // Use passed size if provided, otherwise responsive default
+  const finalSize = size || (isDesktop ? Math.min(height * 0.75, 400) : Math.min(height * 0.45, width * 0.9));
 
   const [assets] = useAssets([
     DARUMA_OBJ,
@@ -142,19 +143,19 @@ export const DarumaMascot = React.memo(function DarumaMascot({ mood = 'bored' }:
 
   if (!assets || !assets[0].uri) {
     return (
-      <View style={[styles.loader, { width: size, height: size }]}>
+      <View style={[styles.loader, { width: finalSize, height: finalSize }]}>
         <ActivityIndicator color={Colors.palette.softHankoRed} />
       </View>
     );
   }
 
   return (
-    <View style={[styles.container, { width: size, height: size }]}>
-      <Canvas camera={{ position: [0, 0, 5], fov: 40 }} shadows>
-        <ambientLight intensity={0.6} />
-        <pointLight position={[10, 10, 10]} intensity={1.5} />
-        <spotLight position={[-5, 5, 5]} angle={0.2} penumbra={1} intensity={2} />
-        <directionalLight position={[0, 5, 5]} intensity={0.5} />
+    <View style={[styles.container, { width: finalSize, height: finalSize }]}>
+      <Canvas camera={{ position: [0, 0, 5], fov: 40 }}>
+        <ambientLight intensity={0.4} />
+        <pointLight position={[10, 10, 10]} intensity={0.8} />
+        <spotLight position={[-5, 5, 5]} angle={0.2} penumbra={1} intensity={1} />
+        <directionalLight position={[0, 5, 5]} intensity={0.3} />
         
         <React.Suspense fallback={null}>
           <DarumaModel url={assets[0].uri} mood={mood} />

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { View, ActivityIndicator } from 'react-native';
+import { View, ActivityIndicator, Text } from 'react-native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { initDb } from '../db';
@@ -37,6 +37,7 @@ export default function RootLayout() {
   });
 
   const [dbReady, setDbReady] = useState(false);
+  const [initError, setInitError] = useState<string | null>(null);
   const loadUser = useAppStore((s) => s.loadUser);
 
   useEffect(() => {
@@ -50,24 +51,37 @@ export default function RootLayout() {
         setDbReady(true);
       } catch (error) {
         console.error('[RootLayout] Initialization failed:', error);
-        // On ne bloque pas dbReady indéfiniment en cas d'erreur mineure
-        // ou on laisse l'utilisateur voir que ça a planté ? 
-        // Pour l'instant on log juste.
+        setInitError(
+          String(error).includes('worker') || String(error).includes('database')
+            ? 'Database access denied. If you are in Private/Incognito mode, please use a standard window.'
+            : 'Initialization failed. Please refresh the page.'
+        );
       }
     }
     init();
   }, []);
 
   useEffect(() => {
-    if (fontsLoaded && dbReady) {
+    if (fontsLoaded && (dbReady || initError)) {
       SplashScreen.hideAsync();
     }
-  }, [fontsLoaded, dbReady]);
+  }, [fontsLoaded, dbReady, initError]);
 
-  if (!fontsLoaded || !dbReady) {
+  if (!fontsLoaded || (!dbReady && !initError)) {
     return (
-      <View style={{ flex: 1, backgroundColor: Colors.navy, alignItems: 'center', justifyContent: 'center' }}>
-        <ActivityIndicator size="large" color={Colors.teal} />
+      <View style={{ flex: 1, backgroundColor: Colors.background, alignItems: 'center', justifyContent: 'center' }}>
+        <ActivityIndicator size="large" color={Colors.primary} />
+      </View>
+    );
+  }
+
+  if (initError) {
+    return (
+      <View style={{ flex: 1, backgroundColor: Colors.background, alignItems: 'center', justifyContent: 'center', padding: 40 }}>
+        <Text style={{ color: Colors.error, fontSize: 18, textAlign: 'center', fontFamily: 'NotoSansJP_700Bold', marginBottom: 20 }}>
+          ⚠️ {initError}
+        </Text>
+        <ActivityIndicator color={Colors.primary} />
       </View>
     );
   }

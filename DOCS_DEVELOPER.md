@@ -34,13 +34,26 @@ Allows users to import their own `.apkg` decks:
 - **Mapping**: Maps Anki scheduling state to the FSRS model.
 - **Media**: Extracts and relocates images and audio to the app's local media folder.
 
-## Testing Strategy
+## Deployment
 
-- **Unit Tests**: Located in `/__tests__`. Focus on business logic, SRS algorithms, and data repositories.
-- **Mocks**: Global mocks for native Expo modules are in `/__mocks__`.
-- **Validation**: Every major feature (SRS, Importer, Loader, TTS) has corresponding test coverage.
+### GitHub Pages (Web Showroom)
+
+The app is deployed to GitHub Pages via a GitHub Actions workflow (`.github/workflows/deploy-pages.yml`).
+
+**Mandatory GitHub Secrets:**
+For the production build to work, you MUST configure the following Secrets in your GitHub Repository settings:
+1.  **`EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY`**: Your Clerk production publishable key.
+2.  **`FUDAMI_PACK_KEY`**: The AES-256 hex key used to decrypt the content packs.
+
+**Authentication Setup:**
+- In the **Clerk Dashboard**, ensure you have added your production URL (e.g., `https://snonow.github.io/fudami-front/`) to the **Allowed Redirect URLs** and **Allowed Origins**.
+- The `SignInWithOAuth` component uses `expo-linking` to generate redirect URLs, which are compatible with both mobile schemes and web domains.
 
 ## Performance & Memory
 
 - **Binary Blobs**: Always use `chunked` conversion when moving data between JS and Native layers via `base64`.
 - **3D Rendering**: Limit `Canvas` re-renders. Avoid re-creating `Geometry`, `Material`, or `Texture` objects within the render loop.
+
+## Browser Limitations
+
+- **Private / Incognito Mode**: On the web, `expo-sqlite` relies on IndexedDB via a web worker. Many browsers (like Safari and Firefox) restrict IndexedDB access in Private mode. The app includes a specialized error handler in `RootLayout` to notify users to switch to a standard window if initialization fails due to storage restrictions.

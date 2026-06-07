@@ -24,8 +24,20 @@ export const Flashcard: React.FC<FlashcardProps> = ({ frontKanji, frontKana, bac
   const animatedValue = useRef(new Animated.Value(0)).current;
   const [player, setPlayer] = useState<AudioPlayer | null>(null);
 
+  // 'Freeze' the content to prevent leaks during animations
+  const [displayContent, setDisplayContent] = useState({ frontKanji, frontKana, back });
+
+  useEffect(() => {
+    // Only update the visible content when the card is NOT flipped.
+    // This ensures that during the 'unflip' animation of card A, 
+    // we don't accidentally show the data of card B.
+    if (!isFlipped) {
+      setDisplayContent({ frontKanji, frontKana, back });
+    }
+  }, [isFlipped, frontKanji, frontKana, back]);
+
   // Text to speak = kanji if available, otherwise kana
-  const readingText = frontKanji || frontKana;
+  const readingText = displayContent.frontKanji || displayContent.frontKana;
 
   // Use pre-generated VOICEVOX audio if wordId is provided, otherwise live TTS
   const handleSpeak = () => wordId
@@ -42,13 +54,13 @@ export const Flashcard: React.FC<FlashcardProps> = ({ frontKanji, frontKana, bac
 
     if (isFlipped) {
       // Play legacy Anki audio if present, else speak via VOICEVOX / TTS
-      if (back.includes('[sound:')) {
-        playAudio(back);
+      if (displayContent.back.includes('[sound:')) {
+        playAudio(displayContent.back);
       } else {
         handleSpeak();
       }
     }
-  }, [isFlipped, animatedValue, back]);
+  }, [isFlipped, animatedValue, displayContent.back]);
 
   useEffect(() => {
     return () => {
@@ -112,8 +124,8 @@ export const Flashcard: React.FC<FlashcardProps> = ({ frontKanji, frontKana, bac
             size={38}
           />
         </Pressable>
-        <Text style={[styles.kanji, { color: colors.white, fontFamily: 'KanjiStroke' }]}>{frontKanji}</Text>
-        <Text style={[styles.kana, { color: colors.textMuted }]}>{frontKana}</Text>
+        <Text style={[styles.kanji, { color: colors.white, fontFamily: 'KanjiStroke' }]}>{displayContent.frontKanji}</Text>
+        <Text style={[styles.kana, { color: colors.textMuted }]}>{displayContent.frontKana}</Text>
         <Text style={[styles.hint, { color: colors.textMuted }]}>Tap to reveal</Text>
       </Animated.View>
 
@@ -134,12 +146,12 @@ export const Flashcard: React.FC<FlashcardProps> = ({ frontKanji, frontKana, bac
 
         <View style={styles.contentWrapper}>
           <View style={styles.meaningContainer}>
-            {renderContent(back)}
+            {renderContent(displayContent.back)}
           </View>
           
           <View style={[styles.separator, { backgroundColor: colors.palette.softAizomeIndigo + '44' }]} />
           
-          <Text style={[styles.kanaBack, { color: colors.text }]}>{frontKana}</Text>
+          <Text style={[styles.kanaBack, { color: colors.text }]}>{displayContent.frontKana}</Text>
           <Text style={[styles.hintRelative, { color: colors.textMuted }]}>Grade your answer</Text>
         </View>
       </Animated.View>
@@ -151,7 +163,11 @@ const styles = StyleSheet.create({
   container: { width: '100%', height: 440, alignItems: 'center', justifyContent: 'center' },
   card: {
     position: 'absolute', width: '100%', height: '100%', borderRadius: 32, padding: 24, alignItems: 'center', justifyContent: 'center',
-    backfaceVisibility: 'hidden', boxShadow: '0px 12px 32px rgba(0, 0, 0, 0.3)', elevation: 10, borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)'
+    backfaceVisibility: 'hidden', 
+    boxShadow: '0px 12px 32px rgba(0, 0, 0, 0.3)', 
+    elevation: 10, 
+    borderWidth: 1, 
+    borderColor: 'rgba(255,255,255,0.05)'
   },
   cardBack: { },
   contentWrapper: { alignItems: 'center', justifyContent: 'center', width: '100%', flex: 1, paddingTop: 60 },
