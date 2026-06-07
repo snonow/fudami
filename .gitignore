@@ -2,22 +2,31 @@
 
 # Expo
 .env.local
-.agents/
 .expo/
 dist/
 web-build/
-GRAPHICS.md
-
-# dependencies
-node_modules/
 
 # AI/Agent config files
+.gemini/
+.agents/
+.mcp.json
+.opencode.json
+.windsurfrules
+skills-lock.json
+.claude/
+
+# Documentation (Optional exclusion based on user preference)
+GRAPHICS.md
 CLAUDE.md
 AGENTS.md
 GEMINI.md
 PLATFORM.md
 .claude/
 expo-env.d.ts
+
+# dependencies
+node_modules/
+package-lock.json
 
 # Native
 .kotlin/
