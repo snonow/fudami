@@ -46,10 +46,12 @@ function DarumaModel({ url, mood }: { url: string; mood: MascotMood }) {
 
   // Determine active texture based on mood and blink state
   const activeTexture = useMemo(() => {
-    if (mood === 'happy') return isBlinking ? textures.happyBlink : textures.happy;
-    if (mood === 'sad') return isBlinking ? textures.sadBlink : textures.sad;
-    return isBlinking ? textures.boredBlink : textures.bored;
-  }, [mood, isBlinking, textures]);
+    const { bored, boredBlink, happy, happyBlink, sad, sadBlink } = textures;
+    if (mood === 'happy') return isBlinking ? happyBlink : happy;
+    if (mood === 'sad') return isBlinking ? sadBlink : sad;
+    // 'thinking' also uses the 'bored' look for now
+    return isBlinking ? boredBlink : bored;
+  }, [mood, isBlinking, textures.bored, textures.boredBlink, textures.happy, textures.happyBlink, textures.sad, textures.sadBlink]);
 
   // Handle expressive blinking
   useEffect(() => {

@@ -16,7 +16,7 @@ const STRINGS: Record<Language, any> = {
     welcome: 'Welcome to',
     tagline: 'Immersive Japanese Learning',
     principle_title: 'The Fudami Way',
-    principle_desc: 'No card debt. No stress. Just pure spaced repetition with a game-like heart.',
+    principle_desc: 'No card debt. No stress. Spaced repetition with a game-like heart.',
     cta_start: 'Get Started',
     cta_enter: 'Enter Dashboard',
     lang_label: 'Language',
@@ -25,7 +25,7 @@ const STRINGS: Record<Language, any> = {
     welcome: 'Bienvenue sur',
     tagline: 'Apprentissage Immersif du Japonais',
     principle_title: 'La Méthode Fudami',
-    principle_desc: 'Pas de dette de cartes. Pas de stress. Juste de la répétition espacée avec un cœur de jeu.',
+    principle_desc: 'Pas de dette de cartes. Pas de stress. De la répétition espacée avec un cœur de jeu.',
     cta_start: 'Commencer',
     cta_enter: 'Accéder au Tableau de Bord',
     lang_label: 'Langue',
@@ -34,7 +34,7 @@ const STRINGS: Record<Language, any> = {
     welcome: 'へようこそ',
     tagline: '没入型日本語学習',
     principle_title: 'ふだみの仕組み',
-    principle_desc: 'カードの借金なし。ストレスなし。ゲームのような感覚で、効率的に記憶。',
+    principle_desc: 'カードの借金なし。ストレスなし。ゲームのような感覚で記憶。',
     cta_start: 'はじめる',
     cta_enter: 'ダッシュボードへ',
     lang_label: '言語',
@@ -50,8 +50,9 @@ export default function LandingPage() {
   const fadeAnim = React.useRef(new Animated.Value(0)).current;
   const slideAnim = React.useRef(new Animated.Value(20)).current;
 
-  // Responsive mascot size - BIG on desktop, SMALLER on mobile
+  // Even smaller mascot size to guarantee everything fits
   const isDesktop = width > 768;
+  const mascotSize = isDesktop ? Math.min(height * 0.35, 400) : Math.min(height * 0.25, width * 0.7);
 
   useEffect(() => {
     // Detect language
@@ -96,13 +97,14 @@ export default function LandingPage() {
 
       <Animated.View style={[
         styles.content, 
-        { opacity: fadeAnim, transform: [{ translateY: slideAnim }], paddingTop: height * 0.05 }
+        { opacity: fadeAnim, transform: [{ translateY: slideAnim }], paddingTop: height * 0.04 }
       ]}>
         
-        {/* Mascot takes center stage - Larger and Responsive */}
+        {/* Mascot - Defaulting to 'happy' as requested to avoid 'bored/blaze' look */}
         <View style={styles.mascotPodium}>
           <DarumaMascot 
-            mood={step === 'welcome' ? 'bored' : step === 'intro' ? 'happy' : 'bored'} 
+            mood="happy"
+            size={mascotSize}
           />
         </View>
 
@@ -146,7 +148,7 @@ export default function LandingPage() {
 
             <SignedOut>
               <Text style={styles.principleTitle}>Join the journey</Text>
-              <View style={{ marginTop: 20 }}>
+              <View style={{ marginTop: 10 }}>
                 <SignInWithOAuth />
               </View>
             </SignedOut>
@@ -165,14 +167,14 @@ const styles = StyleSheet.create({
   langText: { color: Colors.textMuted, fontSize: 12, fontWeight: '700' },
   content: { flex: 1, alignItems: 'center', justifyContent: 'flex-start', paddingHorizontal: 40 },
   mascotPodium: { marginBottom: -10 },
-  uiStack: { alignItems: 'center', width: '100%', gap: 10 },
+  uiStack: { alignItems: 'center', width: '100%', gap: 8 },
   welcomeText: { color: Colors.textMuted, fontSize: 16, fontFamily: 'NotoSansJP_500Medium', marginBottom: 2 },
-  logoRow: { flexDirection: 'row', alignItems: 'baseline', gap: 10, marginBottom: 8 },
+  logoRow: { flexDirection: 'row', alignItems: 'baseline', gap: 10, marginBottom: 4 },
   kanjiLogo: { fontSize: 72, color: Colors.text, fontFamily: 'NotoSansJP_400Regular' },
   title: { fontSize: 24, color: Colors.secondary, fontFamily: 'NotoSansJP_300Light', letterSpacing: 8, textTransform: 'lowercase' },
-  subtitle: { fontSize: 16, color: Colors.primary, fontFamily: 'NotoSansJP_700Bold', letterSpacing: 1, marginBottom: 30, textAlign: 'center' },
-  principleTitle: { fontSize: 28, color: Colors.text, fontFamily: 'NotoSansJP_700Bold', marginBottom: 12, textAlign: 'center' },
-  principleDesc: { fontSize: 16, color: Colors.textMuted, fontFamily: 'NotoSansJP_400Regular', textAlign: 'center', lineHeight: 24, marginBottom: 30, maxWidth: 300 },
-  primaryBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.primary, paddingVertical: 18, paddingHorizontal: 40, borderRadius: 35, gap: 12, minWidth: 240, elevation: 8, boxShadow: '0 4px 15px rgba(255, 107, 107, 0.3)' },
-  primaryBtnText: { color: Colors.white, fontSize: 18, fontWeight: '800', textTransform: 'uppercase', letterSpacing: 1 },
+  subtitle: { fontSize: 16, color: Colors.primary, fontFamily: 'NotoSansJP_700Bold', letterSpacing: 1, marginBottom: 20, textAlign: 'center' },
+  principleTitle: { fontSize: 24, color: Colors.text, fontFamily: 'NotoSansJP_700Bold', marginBottom: 8, textAlign: 'center' },
+  principleDesc: { fontSize: 14, color: Colors.textMuted, fontFamily: 'NotoSansJP_400Regular', textAlign: 'center', lineHeight: 20, marginBottom: 20, maxWidth: 300 },
+  primaryBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.primary, paddingVertical: 14, paddingHorizontal: 32, borderRadius: 35, gap: 12, minWidth: 200, elevation: 8, boxShadow: '0 4px 15px rgba(255, 107, 107, 0.3)' },
+  primaryBtnText: { color: Colors.white, fontSize: 16, fontWeight: '800', textTransform: 'uppercase', letterSpacing: 1 },
 });
