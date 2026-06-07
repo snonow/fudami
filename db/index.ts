@@ -33,16 +33,14 @@ export const getDueCards = async (limit = 20, maxNew = 10, level?: string): Prom
 };
 
 export const updateCardFsrs = async (id: string, state: string, due: string) => (await getDatabase()).runAsync('UPDATE cards SET fsrs_state = ?, due_date = ? WHERE id = ?', [state, due, id]);
-export const insertReview = async (cardId: string, rating: number, mode: string, xp: number) => (await getDatabase()).runAsync('INSERT INTO reviews (card_id, rating, mode, xp_earned, reviewed_at) VALUES (?, ?, ?, ?, ?)', [cardId, rating, mode, xp, new Date().toISOString()]);
+export const insertReview = async (cardId: string, rating: number, mode: string, durationMs: number) => (await getDatabase()).runAsync('INSERT INTO reviews (card_id, rating, mode, xp_earned, reviewed_at) VALUES (?, ?, ?, ?, ?)', [cardId, rating, mode, durationMs, new Date().toISOString()]);
 export const getUserProgress = async (): Promise<UserState> => {
   const r = await (await getDatabase()).getFirstAsync<any>('SELECT * FROM user_progress WHERE id = 1');
-  return { xpTotal: r?.xp_total ?? 0, level: r?.level ?? 1, streakDays: r?.streak_days ?? 0, totalReviews: r?.total_reviews ?? 0, completedLevels: [] };
+  return { xpTotal: 0, level: 1, streakDays: r?.streak_days ?? 0, totalReviews: r?.total_reviews ?? 0, completedLevels: [] };
 };
-export const addXPAndReview = async (xp: number): Promise<UserState> => {
-  const db = await getDatabase(), r = await db.getFirstAsync<any>('SELECT * FROM user_progress WHERE id = 1');
-  const nX = (r?.xp_total ?? 0) + xp, nL = getLevelFromXP(nX), nR = (r?.total_reviews ?? 0) + 1;
-  await db.runAsync('UPDATE user_progress SET xp_total = ?, level = ?, total_reviews = ? WHERE id = 1', [nX, nL, nR]);
-  return { xpTotal: nX, level: nL, streakDays: r?.streak_days ?? 0, totalReviews: nR, completedLevels: [] };
+export const incrementReviews = async (): Promise<void> => {
+  const db = await getDatabase();
+  await db.runAsync('UPDATE user_progress SET total_reviews = total_reviews + 1 WHERE id = 1');
 };
 export const updateStreak = async (): Promise<number> => {
   const db = await getDatabase(), today = new Date().toISOString().slice(0, 10), r = await db.getFirstAsync<any>('SELECT * FROM user_progress WHERE id = 1');

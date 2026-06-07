@@ -1,50 +1,130 @@
 import React from 'react'
 import * as WebBrowser from 'expo-web-browser'
-import { Text, View, Pressable, StyleSheet } from 'react-native'
-import { useOAuth } from '@clerk/clerk-expo'
+import { Text, View, Pressable, StyleSheet, ActivityIndicator } from 'react-native'
+import { useOAuth, useSignIn, useSignUp } from '@clerk/clerk-expo'
 import * as Linking from 'expo-linking'
 import { Colors } from '../../constants/Colors'
+import { Ionicons } from '@expo/vector-icons'
 
 WebBrowser.maybeCompleteAuthSession()
 
 export const SignInWithOAuth = () => {
-  const { startOAuthFlow } = useOAuth({ strategy: 'oauth_google' })
+  const { startOAuthFlow: startGoogleFlow } = useOAuth({ strategy: 'oauth_google' })
+  const { startOAuthFlow: startAppleFlow } = useOAuth({ strategy: 'oauth_apple' })
+  const [loading, setLoading] = React.useState<string | null>(null)
 
-  const onPress = React.useCallback(async () => {
+  const onGooglePress = React.useCallback(async () => {
+    setLoading('google')
     try {
-      const { createdSessionId, signIn, signUp, setActive } = await startOAuthFlow({
-        redirectUrl: Linking.createURL('/dashboard', { scheme: 'fudami' }),
+      const { createdSessionId, setActive } = await startGoogleFlow({
+        redirectUrl: Linking.createURL('/(tabs)', { scheme: 'fudami' }),
       })
-
       if (createdSessionId) {
         setActive!({ session: createdSessionId })
-      } else {
-        // Use signIn or signUp for next steps such as MFA
       }
     } catch (err) {
-      console.error('OAuth error', err)
+      console.error('Google OAuth error', err)
+    } finally {
+      setLoading(null)
     }
-  }, [])
+  }, [startGoogleFlow])
+
+  const onApplePress = React.useCallback(async () => {
+    setLoading('apple')
+    try {
+      const { createdSessionId, setActive } = await startAppleFlow({
+        redirectUrl: Linking.createURL('/(tabs)', { scheme: 'fudami' }),
+      })
+      if (createdSessionId) {
+        setActive!({ session: createdSessionId })
+      }
+    } catch (err) {
+      console.error('Apple OAuth error', err)
+    } finally {
+      setLoading(null)
+    }
+  }, [startAppleFlow])
 
   return (
-    <Pressable style={styles.button} onPress={onPress}>
-      <Text style={styles.buttonText}>Sign in with Google</Text>
-    </Pressable>
+    <View style={styles.container}>
+      {/* Google Button */}
+      <Pressable 
+        style={[styles.button, styles.googleButton]} 
+        onPress={onGooglePress}
+        disabled={!!loading}
+      >
+        {loading === 'google' ? (
+          <ActivityIndicator color={Colors.white} />
+        ) : (
+          <>
+            <Ionicons name="logo-google" size={20} color={Colors.white} style={styles.icon} />
+            <Text style={styles.buttonText}>Continue with Google</Text>
+          </>
+        )}
+      </Pressable>
+
+      {/* Apple Button */}
+      <Pressable 
+        style={[styles.button, styles.appleButton]} 
+        onPress={onApplePress}
+        disabled={!!loading}
+      >
+        {loading === 'apple' ? (
+          <ActivityIndicator color={Colors.white} />
+        ) : (
+          <>
+            <Ionicons name="logo-apple" size={22} color={Colors.white} style={styles.icon} />
+            <Text style={styles.buttonText}>Continue with Apple</Text>
+          </>
+        )}
+      </Pressable>
+      
+      <Text style={styles.note}>
+        Email/Password login is available in the dashboard settings.
+      </Text>
+    </View>
   )
 }
 
 const styles = StyleSheet.create({
+  container: {
+    width: '100%',
+    gap: 12,
+    alignItems: 'center',
+  },
   button: {
-    backgroundColor: Colors.teal,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
     paddingVertical: 16,
-    paddingHorizontal: 48,
+    paddingHorizontal: 24,
     borderRadius: 30,
-    elevation: 5,
+    width: 280,
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+  },
+  googleButton: {
+    backgroundColor: '#4285F4',
+  },
+  appleButton: {
+    backgroundColor: '#000000',
   },
   buttonText: {
     color: Colors.white,
-    fontSize: 18,
-    fontWeight: '700',
-    letterSpacing: 2,
+    fontSize: 16,
+    fontWeight: '600',
+    letterSpacing: 0.5,
   },
+  icon: {
+    marginRight: 10,
+  },
+  note: {
+    color: Colors.textMuted,
+    fontSize: 12,
+    marginTop: 8,
+    textAlign: 'center',
+  }
 })

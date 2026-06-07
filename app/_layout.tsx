@@ -21,13 +21,9 @@ import * as SplashScreen from 'expo-splash-screen';
 import { ClerkProvider, ClerkLoaded } from '@clerk/clerk-expo';
 import { tokenCache } from '../hooks/auth/useTokenCache';
 
-const publishableKey = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY!;
-
-if (!publishableKey) {
-  throw new Error(
-    'Missing Publishable Key. Please set EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY in your .env',
-  );
-}
+// During static export, environment variables might be missing.
+// We provide a fallback to prevent the build from crashing.
+const publishableKey = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY || '';
 
 SplashScreen.preventAutoHideAsync();
 

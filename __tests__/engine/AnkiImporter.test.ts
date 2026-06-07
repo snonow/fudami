@@ -194,7 +194,7 @@ describe('AnkiImporter', () => {
       });
     });
 
-    it('counts moved media files', async () => {
+    it('counts moved media files and handles extraction', async () => {
       unzipSync.mockReturnValue({
         'collection.anki2': new Uint8Array([1]),
         'media': new TextEncoder().encode('{"0":"image.jpg"}'),
@@ -210,6 +210,13 @@ describe('AnkiImporter', () => {
 
       const result = await importer.importDeck();
       expect(result!.mediaCount).toBe(1);
+      
+      // Verify that extraction called writeAsStringAsync
+      expect(FileSystem.writeAsStringAsync).toHaveBeenCalledWith(
+        expect.stringContaining('anki_import/0'),
+        expect.any(String), // base64
+        { encoding: 'base64' }
+      );
     });
   });
 

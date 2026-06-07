@@ -280,33 +280,42 @@ export async function queryLearningNodes(
 
 // ─── Grammar ──────────────────────────────────────────────────────────────────
 
-const _ROW_TO_GRAMMAR = (r: RawGrammarRow): GrammarPoint => ({
-  id:        r.id,
-  structure: r.structure,
-  meaningFr: r.meaning_fr ?? null,
-  pattern:   r.pattern ?? null,
-  level:     intToLevel(r.jlpt_level),
+const _ROW_TO_GRAMMAR = (r: RawGrammarRow, explanation?: string | null): GrammarPoint => ({
+  id:          r.id,
+  structure:   r.structure,
+  meaningFr:   r.meaning_fr ?? null,
+  pattern:     r.pattern ?? null,
+  level:       intToLevel(r.jlpt_level),
+  explanation: explanation ?? null,
 });
 
-/** Fetch grammar points for a JLPT level, in learning-graph order if available. */
+/**
+ * Fetch grammar points for a JLPT level, in learning-graph order if available.
+ * Includes the explanation in `lang` from grammar_translations (falls back to 'en').
+ */
 export async function queryGrammarForLevel(
   level: JLPTLevel,
   limit = 200,
+  lang = 'en',
 ): Promise<Result<GrammarPoint[], ContentError>> {
   const dbResult = await openContentDB();
   if (!dbResult.ok) return dbResult;
   try {
-    const rows = await dbResult.data.getAllAsync<RawGrammarRow>(
-      `SELECT gp.id, gp.structure, gp.meaning_fr, gp.pattern, gp.jlpt_level
+    const rows = await dbResult.data.getAllAsync<RawGrammarRow & { explanation: string | null }>(
+      `SELECT gp.id, gp.structure, gp.meaning_fr, gp.pattern, gp.jlpt_level,
+              COALESCE(
+                (SELECT text FROM grammar_translations WHERE grammar_id = gp.id AND lang = ?),
+                (SELECT text FROM grammar_translations WHERE grammar_id = gp.id AND lang = 'en')
+              ) AS explanation
        FROM   grammar_points gp
        LEFT JOIN learning_order lo
               ON lo.entity_id = gp.id AND lo.entity_type = 'grammar'
        WHERE  gp.jlpt_level = ?
        ORDER  BY COALESCE(lo.order_index, 999999) ASC
        LIMIT  ?`,
-      [levelToInt(level), limit],
+      [lang, levelToInt(level), limit],
     );
-    return ok(rows.map(_ROW_TO_GRAMMAR));
+    return ok(rows.map(r => _ROW_TO_GRAMMAR(r, r.explanation)));
   } catch (e) {
     return err({ kind: 'DB_QUERY_FAILED', reason: String(e) });
   }
@@ -315,18 +324,23 @@ export async function queryGrammarForLevel(
 /** Fetch the grammar points that a given vocab word is used in. */
 export async function queryGrammarForWord(
   wordId: string,
+  lang = 'en',
 ): Promise<Result<GrammarPoint[], ContentError>> {
   const dbResult = await openContentDB();
   if (!dbResult.ok) return dbResult;
   try {
-    const rows = await dbResult.data.getAllAsync<RawGrammarRow>(
-      `SELECT gp.id, gp.structure, gp.meaning_fr, gp.pattern, gp.jlpt_level
+    const rows = await dbResult.data.getAllAsync<RawGrammarRow & { explanation: string | null }>(
+      `SELECT gp.id, gp.structure, gp.meaning_fr, gp.pattern, gp.jlpt_level,
+              COALESCE(
+                (SELECT text FROM grammar_translations WHERE grammar_id = gp.id AND lang = ?),
+                (SELECT text FROM grammar_translations WHERE grammar_id = gp.id AND lang = 'en')
+              ) AS explanation
        FROM   grammar_vocab gv
        JOIN   grammar_points gp ON gp.id = gv.grammar_id
        WHERE  gv.word_id = ?`,
-      [wordId],
+      [lang, wordId],
     );
-    return ok(rows.map(_ROW_TO_GRAMMAR));
+    return ok(rows.map(r => _ROW_TO_GRAMMAR(r, r.explanation)));
   } catch (e) {
     return err({ kind: 'DB_QUERY_FAILED', reason: String(e) });
   }

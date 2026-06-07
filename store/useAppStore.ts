@@ -2,18 +2,19 @@ import { create } from 'zustand';
 import { ReviewMode, SessionState, UserState } from '../types';
 import { StudyCard } from '../data/study/types';
 import { getDueStudyCards, getNewStudyCards } from '../data/study/StudyRepository';
-import { updateCardFsrs, insertReview, getUserProgress, addXPAndReview, updateStreak } from '../db';
-import { scheduleReview, getFsrsRating, deserializeCard, serializeCard, createNewCard, getXPForRating } from '../engine';
+import { updateCardFsrs, insertReview, getUserProgress, incrementReviews, updateStreak } from '../db';
+import { scheduleReview, getFsrsRating, deserializeCard, serializeCard, createNewCard } from '../engine';
 
 interface AppSessionState extends Omit<SessionState, 'cards'> {
   cards: StudyCard[];
+  cardStartTime: number;
 }
 
 interface AppState {
   session: AppSessionState; user: UserState; isLoading: boolean;
   loadUser: () => Promise<void>;
   loadSession: (level?: string) => Promise<void>;
-  gradeCard: (r: 'again' | 'hard' | 'good' | 'easy', token?: string) => Promise<void>;
+  gradeCard: (r: 'again' | 'good', token?: string) => Promise<void>;
   endSession: () => void;
   startSession: (cards: StudyCard[], type: 'cards' | 'minutes', goal: number) => void;
 }
@@ -33,8 +34,12 @@ async function backgroundSync(user: UserState, token?: string) {
   }
 }
 
-const DEF_S: AppSessionState = { isActive: false, cards: [], currentIndex: 0, mode: 'flip', xpEarned: 0, reviewedCount: 0, goalType: 'cards', goalValue: 0, progress: 0, lastModeByCardId: {} };
-const DEF_U: UserState = { xpTotal: 0, level: 1, streakDays: 0, totalReviews: 0, completedLevels: [] };
+const DEF_S: AppSessionState = { 
+  isActive: false, cards: [], currentIndex: 0, mode: 'flip', 
+  reviewedCount: 0, goalType: 'cards', goalValue: 0, progress: 0, 
+  lastModeByCardId: {}, cardStartTime: 0 
+};
+const DEF_U: UserState = { streakDays: 0, totalReviews: 0, completedLevels: [] };
 
 const pickMode = (last?: ReviewMode): ReviewMode => {
   const w: Record<ReviewMode, number> = { flip: 0.4, mcq: 0.35, typing: 0.25 };
@@ -63,22 +68,31 @@ export const useAppStore = create<AppState>((set, get) => ({
     const streak = await updateStreak();
     if (!cards.length) return set({ isLoading: false, user: { ...get().user, streakDays: streak } });
     const m = pickMode();
-    set({ isLoading: false, user: { ...get().user, streakDays: streak }, session: { ...DEF_S, isActive: true, cards, goalValue: cards.length, mode: m, lastModeByCardId: { [cards[0].id]: m } } });
+    set({ 
+      isLoading: false, 
+      user: { ...get().user, streakDays: streak }, 
+      session: { 
+        ...DEF_S, isActive: true, cards, goalValue: cards.length, 
+        mode: m, lastModeByCardId: { [cards[0].id]: m },
+        cardStartTime: Date.now() 
+      } 
+    });
   },
   gradeCard: async (r, token) => {
     const { session, user } = get();
     const card = session.cards[session.currentIndex];
     if (!card) return;
 
+    const duration = Date.now() - session.cardStartTime;
     const fsrsState = card.progress.fsrs_state;
-    const res = scheduleReview(fsrsState ? deserializeCard(fsrsState) : createNewCard(), getFsrsRating({ again: 1, hard: 2, good: 3, easy: 4 }[r]));
+    const res = scheduleReview(fsrsState ? deserializeCard(fsrsState) : createNewCard(), getFsrsRating(r));
     const sState = serializeCard(res.card), due = res.card.due.toISOString();
     
     await updateCardFsrs(card.id, sState, due);
-    const xp = getXPForRating(r, user.streakDays);
-    await insertReview(card.id, { again: 1, hard: 2, good: 3, easy: 4 }[r], session.mode, xp);
+    await insertReview(card.id, r === 'again' ? 1 : 3, session.mode, duration);
+    await incrementReviews();
     
-    const newUser = await addXPAndReview(xp), nextIdx = session.currentIndex + 1, revCount = session.reviewedCount + 1;
+    const nextIdx = session.currentIndex + 1, revCount = session.reviewedCount + 1;
     let cards = [...session.cards];
     if (r === 'again') {
       cards.splice(Math.min(nextIdx + 3, cards.length), 0, { 
@@ -87,15 +101,30 @@ export const useAppStore = create<AppState>((set, get) => ({
       });
     }
 
+    const newUser = await getUserProgress();
     // Trigger background sync (silent)
     backgroundSync(newUser, token);
 
     const nextCard = cards[nextIdx], nextM = nextCard ? pickMode(session.lastModeByCardId[nextCard.id]) : session.mode;
-    set({ user: { ...newUser, completedLevels: user.completedLevels }, session: { ...session, cards, currentIndex: nextIdx, reviewedCount: revCount, isActive: nextIdx < cards.length, progress: Math.min(revCount / session.goalValue, 1), xpEarned: session.xpEarned + xp, mode: nextM, lastModeByCardId: nextCard ? { ...session.lastModeByCardId, [nextCard.id]: nextM } : session.lastModeByCardId } });
+    set({ 
+      user: { ...newUser, completedLevels: user.completedLevels }, 
+      session: { 
+        ...session, cards, currentIndex: nextIdx, reviewedCount: revCount, 
+        isActive: nextIdx < cards.length, progress: Math.min(revCount / session.goalValue, 1), 
+        mode: nextM, lastModeByCardId: nextCard ? { ...session.lastModeByCardId, [nextCard.id]: nextM } : session.lastModeByCardId,
+        cardStartTime: Date.now()
+      } 
+    });
   },
   endSession: () => set({ session: DEF_S }),
   startSession: (cards, goalType, goalValue) => {
     const m = cards.length ? pickMode() : 'flip';
-    set({ session: { ...DEF_S, isActive: !!cards.length, cards, goalType, goalValue, mode: m, lastModeByCardId: cards.length ? { [cards[0].id]: m } : {} } });
+    set({ 
+      session: { 
+        ...DEF_S, isActive: !!cards.length, cards, goalType, goalValue, 
+        mode: m, lastModeByCardId: cards.length ? { [cards[0].id]: m } : {},
+        cardStartTime: Date.now()
+      } 
+    });
   }
 }));
