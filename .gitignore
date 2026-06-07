@@ -74,3 +74,4 @@ constants/ttsKey.ts
 /android
 # Added by code-review-graph
 .code-review-graph/
+fudami-front/dist-test/
