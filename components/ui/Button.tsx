@@ -1,6 +1,7 @@
 import React from 'react';
-import { TouchableOpacity, Text, StyleSheet, ViewStyle, TextStyle } from 'react-native';
+import { TouchableOpacity, Text, StyleSheet, ViewStyle, TextStyle, ActivityIndicator } from 'react-native';
 import { Colors } from '../../constants/Colors';
+import { useTheme } from '../../context/ThemeContext';
 
 interface ButtonProps {
   title: string;
@@ -8,16 +9,17 @@ interface ButtonProps {
   variant?: 'primary' | 'secondary' | 'outline';
   style?: ViewStyle;
   textStyle?: TextStyle;
+  /** Affiche un spinner et désactive le bouton pendant un chargement. */
+  loading?: boolean;
 }
 
-import { useTheme } from '../../context/ThemeContext';
-
-export const Button: React.FC<ButtonProps> = ({ 
-  title, 
-  onPress, 
-  variant = 'primary', 
+export const Button: React.FC<ButtonProps> = ({
+  title,
+  onPress,
+  variant = 'primary',
   style,
-  textStyle 
+  textStyle,
+  loading = false,
 }) => {
   const { colors } = useTheme();
 
@@ -42,12 +44,16 @@ export const Button: React.FC<ButtonProps> = ({
   };
 
   return (
-    <TouchableOpacity 
-      style={[styles.button, getVariantStyle(), style]} 
-      onPress={onPress}
+    <TouchableOpacity
+      style={[styles.button, getVariantStyle(), style, loading && styles.disabled]}
+      onPress={loading ? undefined : onPress}
       activeOpacity={0.8}
+      disabled={loading}
     >
-      <Text style={[styles.baseText, getTextStyle(), textStyle]}>{title}</Text>
+      {loading
+        ? <ActivityIndicator size="small" color={variant === 'outline' ? colors.primary : colors.white} />
+        : <Text style={[styles.baseText, getTextStyle(), textStyle]}>{title}</Text>
+      }
     </TouchableOpacity>
   );
 };
@@ -59,6 +65,9 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  disabled: {
+    opacity: 0.6,
   },
   baseText: {
     fontSize: 16,
