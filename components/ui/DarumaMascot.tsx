@@ -129,7 +129,7 @@ export const DarumaMascot = React.memo(function DarumaMascot({ mood = 'bored' }:
   const isDesktop = width > 768;
   
   // Responsive sizing: MASSIVE on desktop, optimized on mobile
-  const size = isDesktop ? Math.min(height * 0.75, 800) : Math.min(height * 0.45, width * 0.9);
+  const size = isDesktop ? Math.min(height * 0.75, 400) : Math.min(height * 0.45, width * 0.9);
 
   const [assets] = useAssets([
     DARUMA_OBJ,

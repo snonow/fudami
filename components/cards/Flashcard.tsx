@@ -24,6 +24,14 @@ export const Flashcard: React.FC<FlashcardProps> = ({ frontKanji, frontKana, bac
   const animatedValue = useRef(new Animated.Value(0)).current;
   const [player, setPlayer] = useState<AudioPlayer | null>(null);
 
+  const [displayBack, setDisplayBack] = useState(back);
+
+  useEffect(() => {
+    if (isFlipped) {
+      setDisplayBack(back);
+    }
+  }, [isFlipped, back]);
+
   // Text to speak = kanji if available, otherwise kana
   const readingText = frontKanji || frontKana;
 
@@ -134,7 +142,7 @@ export const Flashcard: React.FC<FlashcardProps> = ({ frontKanji, frontKana, bac
 
         <View style={styles.contentWrapper}>
           <View style={styles.meaningContainer}>
-            {renderContent(back)}
+            {renderContent(displayBack)}
           </View>
           
           <View style={[styles.separator, { backgroundColor: colors.palette.softAizomeIndigo + '44' }]} />
@@ -151,7 +159,11 @@ const styles = StyleSheet.create({
   container: { width: '100%', height: 440, alignItems: 'center', justifyContent: 'center' },
   card: {
     position: 'absolute', width: '100%', height: '100%', borderRadius: 32, padding: 24, alignItems: 'center', justifyContent: 'center',
-    backfaceVisibility: 'hidden', boxShadow: '0px 12px 32px rgba(0, 0, 0, 0.3)', elevation: 10, borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)'
+    backfaceVisibility: 'hidden', 
+    boxShadow: '0px 12px 32px rgba(0, 0, 0, 0.3)', 
+    elevation: 10, 
+    borderWidth: 1, 
+    borderColor: 'rgba(255,255,255,0.05)'
   },
   cardBack: { },
   contentWrapper: { alignItems: 'center', justifyContent: 'center', width: '100%', flex: 1, paddingTop: 60 },

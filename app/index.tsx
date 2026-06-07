@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, Pressable, Animated, Platform, useWindowDimensions } from 'react-native';
+import { View, Text, StyleSheet, Pressable, Animated, Platform, useWindowDimensions, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Colors } from '../constants/Colors';
 import { SignedIn, SignedOut } from '@clerk/clerk-expo';
@@ -19,7 +19,6 @@ const STRINGS: Record<Language, any> = {
     principle_desc: 'No card debt. No stress. Spaced repetition with a game-like heart.',
     cta_start: 'Get Started',
     cta_enter: 'Enter Dashboard',
-    lang_label: 'Language',
   },
   fr: {
     welcome: 'Bienvenue sur',
@@ -28,7 +27,6 @@ const STRINGS: Record<Language, any> = {
     principle_desc: 'Pas de dette de cartes. Pas de stress. De la répétition espacée avec un cœur de jeu.',
     cta_start: 'Commencer',
     cta_enter: 'Accéder au Tableau de Bord',
-    lang_label: 'Langue',
   },
   jp: {
     welcome: 'へようこそ',
@@ -37,20 +35,22 @@ const STRINGS: Record<Language, any> = {
     principle_desc: 'カードの借金なし。ストレスなし。ゲームのような感覚で記憶。',
     cta_start: 'はじめる',
     cta_enter: 'ダッシュボードへ',
-    lang_label: '言語',
   }
 };
 
 export default function LandingPage() {
   const router = useRouter();
-  const { height, width } = useWindowDimensions();
+  const dimensions = useWindowDimensions();
+  const height = dimensions.height || 800;
+  const width = dimensions.width || 400;
+
   const [step, setStep] = useState<'welcome' | 'intro' | 'auth'>('welcome');
   const [lang, setLang] = useState<Language>('en');
 
   const fadeAnim = React.useRef(new Animated.Value(0)).current;
   const slideAnim = React.useRef(new Animated.Value(20)).current;
 
-  // Even smaller mascot size to guarantee everything fits vertically
+  // Compact mascot size to ensure visibility
   const isDesktop = width > 768;
   const mascotSize = isDesktop ? Math.min(height * 0.3, 350) : Math.min(height * 0.22, width * 0.6);
 
@@ -97,10 +97,13 @@ export default function LandingPage() {
 
       <Animated.View style={[
         styles.content, 
-        { opacity: fadeAnim, transform: [{ translateY: slideAnim }], paddingTop: height * 0.02 }
+        { 
+          opacity: fadeAnim, 
+          transform: [{ translateY: slideAnim }], 
+          paddingTop: height * 0.02 
+        }
       ]}>
         
-        {/* Mascot - Defaulting to 'happy' */}
         <View style={styles.mascotPodium}>
           <DarumaMascot 
             mood="happy"
@@ -148,7 +151,7 @@ export default function LandingPage() {
 
             <SignedOut>
               <Text style={styles.principleTitle}>Join the journey</Text>
-              <View style={{ marginTop: 5 }}>
+              <View style={{ marginTop: 10 }}>
                 <SignInWithOAuth />
               </View>
             </SignedOut>
@@ -168,7 +171,7 @@ const styles = StyleSheet.create({
   content: { flex: 1, alignItems: 'center', justifyContent: 'flex-start', paddingHorizontal: 40 },
   mascotPodium: { marginBottom: -5 },
   uiStack: { alignItems: 'center', width: '100%', gap: 6 },
-  welcomeText: { color: Colors.textMuted, fontSize: 14, fontFamily: 'NotoSansJP_500Medium', marginBottom: 0 },
+  welcomeText: { color: Colors.textMuted, fontSize: 14, fontFamily: 'NotoSansJP_500Medium' },
   logoRow: { flexDirection: 'row', alignItems: 'baseline', gap: 10, marginBottom: 4 },
   kanjiLogo: { fontSize: 60, color: Colors.text, fontFamily: 'NotoSansJP_400Regular' },
   title: { fontSize: 20, color: Colors.secondary, fontFamily: 'NotoSansJP_300Light', letterSpacing: 6, textTransform: 'lowercase' },
