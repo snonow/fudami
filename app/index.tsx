@@ -100,8 +100,7 @@ export default function LandingPage() {
         {/* Mascot takes center stage - Larger and Responsive */}
         <View style={styles.mascotPodium}>
           <DarumaMascot 
-            mood={step === 'welcome' ? 'neutral' : step === 'intro' ? 'happy' : 'neutral'} 
-            size={mascotSize} 
+            mood={step === 'welcome' ? 'bored' : step === 'intro' ? 'happy' : 'bored'} 
           />
         </View>
 
