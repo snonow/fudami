@@ -5,7 +5,8 @@ fudami is a modern, cross-platform language learning application built with Reac
 ## Features
 
 - **Cross-Platform:** Runs on iOS, Android, and the Web using Expo Router.
-- **Smart Reviews:** Uses `ts-fsrs` for advanced spaced repetition scheduling. See the [SRS Documentation](./DOCS_SRS.md) for more details.
+- **Smart Reviews:** Uses `ts-fsrs` for advanced spaced repetition scheduling. See the [SRS Documentation](../DOCS_SRS.md) for more details.
+- **Developer Guide:** Detailed technical documentation is available in [DOCS_DEVELOPER.md](./DOCS_DEVELOPER.md).
 - **Interactive UI:** Smooth 3D flashcard flip animations and a clean, dark-themed dashboard.
 - **Progress Tracking:** Gamified elements including XP, streaks, and daily goals.
 
