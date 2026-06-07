@@ -49,7 +49,7 @@ jobs:
           echo 'export const GOOGLE_TTS_KEY: string | null = null;' > constants/ttsKey.ts
 
       - name: Export web build
-        run: npx expo export --platform web
+        run: npx expo export --platform web --base-url /fudami-front/
 
       - name: Create .nojekyll
         run: touch dist/.nojekyll
