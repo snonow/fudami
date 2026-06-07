@@ -103,7 +103,7 @@ export default function ProfileScreen() {
         </View>
 
         <Text style={[styles.title, { color: colors.text }]}>Settings</Text>
-        <View style={[styles.card, { backgroundColor: colors.surface }]}>
+        <View style={[styles.card, { backgroundColor: colors.surface, marginBottom: 30 }]}>
           <View style={styles.row}>
             <View>
               <Text style={[styles.label, { color: colors.text }]}>Daily Goal</Text>
@@ -112,10 +112,28 @@ export default function ProfileScreen() {
             <Switch value={true} trackColor={{ false: colors.surfaceLight, true: colors.teal }} />
           </View>
         </View>
+
+        <Text style={[styles.title, { color: colors.text }]}>Sources & Credits</Text>
+        <View style={[styles.card, { backgroundColor: colors.surface }]}>
+          <CreditItem label="Hanabira.org" sub="Grammar points and patterns (CC BY-SA)" />
+          <CreditItem label="JMdict / EDRDG" sub="Dictionary and vocabulary data" />
+          <CreditItem label="Tatoeba" sub="Example sentences and translations" />
+          <CreditItem label="VOICEVOX" sub="Japanese neural text-to-speech" />
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
 }
+
+const CreditItem = ({ label, sub }: { label: string; sub: string }) => {
+  const { colors } = useTheme();
+  return (
+    <View style={{ marginBottom: 12 }}>
+      <Text style={[styles.label, { color: colors.text, fontSize: 14 }]}>{label}</Text>
+      <Text style={[styles.sub, { color: colors.textMuted, fontSize: 12 }]}>{sub}</Text>
+    </View>
+  );
+};
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
