@@ -5,6 +5,7 @@ import { Colors } from '../constants/Colors';
 import { SignedIn, SignedOut } from '@clerk/clerk-expo';
 import { SignInWithOAuth } from '../components/auth/SignInWithOAuth';
 import { LinearGradient } from 'expo-linear-gradient';
+import { DarumaMascot } from '../components/ui/DarumaMascot';
 
 export default function LandingPage() {
   const router = useRouter();
@@ -26,6 +27,7 @@ export default function LandingPage() {
       />
       
       <Animated.View style={[styles.content, { opacity: fadeAnim, transform: [{ scale: scaleAnim }] }]}>
+        <DarumaMascot />
         <View style={styles.logoContainer}>
           <Text style={styles.kanjiLogo}>ふだみ</Text>
           <View style={styles.logoBadge}>

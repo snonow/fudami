@@ -1,14 +1,40 @@
 /**
  * Build-time constants for the content pack.
  *
- * PACK_KEY  — AES-256 key (hex). Comes from constants/packKey.ts (gitignored).
- *             Must match the FUDAMI_PACK_KEY used by fudami-studio.
+ * PACK_KEY       — AES-256 key (hex). From constants/packKey.ts (gitignored).
+ *                  Must match FUDAMI_PACK_KEY in fudami-studio/.env.
  *
- * PACK_URL  — Where to download content packs. Set to null for offline-only / dev mode.
- *             The app works without it (falls back to the bundled seed vocab).
+ * WORKER_URL     — Fudami Gateway (Cloudflare Worker). Used by PackLoader to:
+ *                    GET /packs/versions.json          → public version index
+ *                    GET /packs/{level}                → latest manifest
+ *                    GET /packs/{level}/{file}.pack    → encrypted pack (JWT)
+ *
+ * LOCAL_WORKER   — For local dev: run `uv run python scripts/release.py --local`
+ *                  in fudami-studio to build + serve packs on port 8765.
+ *                  Then set EXPO_PUBLIC_API_URL=http://localhost:8765 in .env.local.
  */
 
 export { PACK_KEY } from './packKey';
 
-export const PACK_URL: string | null = null;
-// Future: 'https://cdn.fudami.app/packs/n5-v1.pack'
+const _apiUrl = process.env.EXPO_PUBLIC_API_URL;
+
+/**
+ * Fudami Gateway base URL.
+ * Dev: override with EXPO_PUBLIC_API_URL=http://localhost:8765 in .env.local
+ * Prod: https://fudami-gateway.workers.dev
+ */
+export const WORKER_URL: string =
+  _apiUrl ?? 'https://fudami-gateway.workers.dev';
+
+/**
+ * @deprecated Use WORKER_URL instead. Pack URLs are now constructed dynamically
+ * per level: `${WORKER_URL}/packs/{level}`.
+ * Kept for backward compatibility with ContentRepository.
+ */
+export const PACK_URL: string | null = _apiUrl ?? null;
+
+/**
+ * True when the app is pointing at the local HTTP server (for dev/testing).
+ * PackLoader will skip auth when this is true.
+ */
+export const IS_LOCAL_DEV = Boolean(_apiUrl?.includes('localhost'));

@@ -45,15 +45,17 @@ export interface Sentence {
 export interface GrammarPoint {
   id: string;
   structure: string;          // "〜なければなりません" / "Base verbale + ながら"
-  meaningFr: string | null;   // short French gloss
+  meaningFr: string | null;   // short French gloss (legacy field, prefer explanation)
   pattern: string | null;     // short construction hint
   level: JLPTLevel;
+  /** Explanation in the requested language (from grammar_translations). */
+  explanation?: string | null;
 }
 
 /** A node in the WaniKani-style learning graph. */
 export interface LearningNode {
   entityId: string;
-  entityType: 'radical' | 'kanji' | 'vocab';
+  entityType: 'radical' | 'kanji' | 'vocab' | 'grammar';
   orderIndex: number;
   level: JLPTLevel | null;
 }
@@ -61,12 +63,24 @@ export interface LearningNode {
 /** The manifest shipped alongside the encrypted pack (unencrypted, public). */
 export interface PackManifest {
   id: string;
+  /** e.g. "n5-v3"  — used for update checks (compare installed vs remote). */
+  packName: string;
+  /** "n5" | "n4" | … — for per-level packs. */
+  level?: JLPTLevel;
   version: string;
+  /** 1 = raw sqlite after decrypt; 2 = zlib-compressed then AES-GCM. */
   packFormat: number;
+  /** "zlib" when packFormat ≥ 2. */
+  compression?: string;
   buildDate: string;
-  levels: JLPTLevel[];
+  /** For the full-DB (legacy) manifest only — list of levels included. */
+  levels?: JLPTLevel[];
   counts: { words: number; kanji: number; sentences: number; grammar: number };
-  integrityHash: string;     // SHA-256 of the encrypted .pack file
+  sizes?: { dbBytes: number; compressedBytes: number; packBytes: number };
+  integrityHash: string;
+  /** Attribution strings for the "Sources & Credits" screen (legally required). */
+  attribution?: string[];
+  license?: string;
 }
 
 /** Typed errors — never raw strings leaking to UI. */
