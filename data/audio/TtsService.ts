@@ -26,7 +26,7 @@
  */
 
 import * as Speech from 'expo-speech';
-import { Audio } from 'expo-av';
+import { createAudioPlayer, type AudioPlayer } from 'expo-audio';
 import { GOOGLE_TTS_KEY } from '../../constants/ttsKey';
 import { AudioRepository } from './AudioRepository';
 
@@ -50,8 +50,8 @@ class _TtsService {
   /** In-memory cache for Google Cloud TTS responses (text → base64 MP3). */
   private _cloudCache = new Map<string, string>();
 
-  /** Currently playing expo-av Sound. */
-  private _sound: Audio.Sound | null = null;
+  /** Currently playing expo-audio Player. */
+  private _player: AudioPlayer | null = null;
 
   // ── State management ──────────────────────────────────────────────────────
 
@@ -70,7 +70,6 @@ class _TtsService {
   }
 
   get backend(): 'pregenerated' | 'cloud' | 'system' {
-    // Reported backend doesn't account for pre-generated (checked at runtime).
     return GOOGLE_TTS_KEY ? 'cloud' : 'system';
   }
 
@@ -78,12 +77,6 @@ class _TtsService {
 
   // ── Public API ────────────────────────────────────────────────────────────
 
-  /**
-   * Speak a vocab word by its ID — checks pre-generated VOICEVOX audio first.
-   *
-   * @param wordId       JMdict / seed ID (e.g. 'n5_001', '1000010')
-   * @param fallbackText Japanese text to speak if no pre-generated file exists
-   */
   async speakWord(wordId: string, fallbackText: string): Promise<void> {
     await this.stop();
     this._setState('loading');
@@ -93,17 +86,10 @@ class _TtsService {
         return this._playUri(uri);
       }
     } catch { /* fall through */ }
-    // No pre-generated file — use live TTS
     this._setState('idle');
     return this._speakLive(fallbackText);
   }
 
-  /**
-   * Speak an example sentence by its ID.
-   *
-   * @param sentenceId   Tatoeba sentence ID
-   * @param fallbackText Japanese text to speak if no pre-generated file exists
-   */
   async speakSentence(sentenceId: string, fallbackText: string): Promise<void> {
     await this.stop();
     this._setState('loading');
@@ -117,21 +103,16 @@ class _TtsService {
     return this._speakLive(fallbackText);
   }
 
-  /**
-   * Speak any Japanese text directly (no pre-generated file lookup).
-   * Uses Google Cloud TTS if key is set, otherwise expo-speech.
-   */
   async speak(text: string): Promise<void> {
     await this.stop();
     return this._speakLive(text);
   }
 
-  /** Stop current playback immediately. */
   async stop(): Promise<void> {
-    if (this._sound) {
-      await this._sound.stopAsync().catch(() => {});
-      await this._sound.unloadAsync().catch(() => {});
-      this._sound = null;
+    if (this._player) {
+      this._player.pause();
+      this._player.release();
+      this._player = null;
     }
     const speaking = await Speech.isSpeakingAsync().catch(() => false);
     if (speaking) Speech.stop();
@@ -140,30 +121,27 @@ class _TtsService {
 
   // ── Internal playback ─────────────────────────────────────────────────────
 
-  /** Play a file or HTTP URI with expo-av. */
   private async _playUri(uri: string): Promise<void> {
-    await Audio.setAudioModeAsync({ playsInSilentModeIOS: true });
     this._setState('speaking');
     try {
-      const { sound } = await Audio.Sound.createAsync(
-        { uri },
-        { shouldPlay: true },
-      );
-      this._sound = sound;
-      sound.setOnPlaybackStatusUpdate(status => {
-        if (status.isLoaded && status.didJustFinish) {
+      const player = createAudioPlayer(uri);
+      this._player = player;
+      
+      player.addListener('playbackStatusUpdate', (status) => {
+        if (status.didJustFinish) {
           this._setState('idle');
-          sound.unloadAsync().catch(() => {});
-          if (this._sound === sound) this._sound = null;
+          player.release();
+          if (this._player === player) this._player = null;
         }
       });
+
+      player.play();
     } catch (e) {
       console.warn('[TtsService] Failed to play pre-generated audio:', e);
       this._setState('idle');
     }
   }
 
-  /** Live TTS: Google Cloud → system fallback. */
   private async _speakLive(text: string): Promise<void> {
     if (GOOGLE_TTS_KEY) return this._speakCloud(text);
     return this._speakSystem(text);
@@ -203,21 +181,20 @@ class _TtsService {
         this._cloudCache.set(text, audioBase64);
       }
 
-      await Audio.setAudioModeAsync({ playsInSilentModeIOS: true });
       this._setState('speaking');
+      const uri = `data:audio/mp3;base64,${audioBase64}`;
+      const player = createAudioPlayer(uri);
+      this._player = player;
 
-      const { sound } = await Audio.Sound.createAsync(
-        { uri: `data:audio/mp3;base64,${audioBase64}` },
-        { shouldPlay: true },
-      );
-      this._sound = sound;
-      sound.setOnPlaybackStatusUpdate(status => {
-        if (status.isLoaded && status.didJustFinish) {
+      player.addListener('playbackStatusUpdate', (status) => {
+        if (status.didJustFinish) {
           this._setState('idle');
-          sound.unloadAsync().catch(() => {});
-          if (this._sound === sound) this._sound = null;
+          player.release();
+          if (this._player === player) this._player = null;
         }
       });
+
+      player.play();
     } catch (e) {
       console.warn('[TtsService] Cloud TTS failed — falling back to system:', e);
       this._setState('idle');

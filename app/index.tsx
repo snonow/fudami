@@ -1,7 +1,9 @@
 import React, { useEffect } from 'react';
-import { View, Text, StyleSheet, Pressable, Animated } from 'react-native';
+import { View, Text, StyleSheet, Pressable, Animated, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Colors } from '../constants/Colors';
+import { SignedIn, SignedOut } from '@clerk/clerk-expo';
+import { SignInWithOAuth } from '../components/auth/SignInWithOAuth';
 
 export default function LandingPage() {
   const router = useRouter();
@@ -10,8 +12,8 @@ export default function LandingPage() {
 
   useEffect(() => {
     Animated.parallel([
-      Animated.timing(fadeAnim, { toValue: 1, duration: 1000, useNativeDriver: true }),
-      Animated.spring(scaleAnim, { toValue: 1, friction: 8, useNativeDriver: true }),
+      Animated.timing(fadeAnim, { toValue: 1, duration: 1000, useNativeDriver: Platform.OS !== 'web' }),
+      Animated.spring(scaleAnim, { toValue: 1, friction: 8, useNativeDriver: Platform.OS !== 'web' }),
     ]).start();
   }, []);
 
@@ -22,12 +24,18 @@ export default function LandingPage() {
         <Text style={styles.title}>fudami</Text>
         <Text style={styles.subtitle}>Immersive Japanese Learning</Text>
         
-        <Pressable 
-          style={({ pressed }) => [styles.button, pressed && styles.buttonPressed]} 
-          onPress={() => router.replace('/(tabs)')}
-        >
-          <Text style={styles.buttonText}>Enter</Text>
-        </Pressable>
+        <SignedIn>
+          <Pressable 
+            style={({ pressed }) => [styles.button, pressed && styles.buttonPressed]} 
+            onPress={() => router.replace('/(tabs)')}
+          >
+            <Text style={styles.buttonText}>Enter</Text>
+          </Pressable>
+        </SignedIn>
+
+        <SignedOut>
+          <SignInWithOAuth />
+        </SignedOut>
       </Animated.View>
 
       <Text style={styles.strokeBg}>学習</Text>

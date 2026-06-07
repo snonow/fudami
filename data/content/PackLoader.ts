@@ -10,7 +10,7 @@
  * Nothing above this module touches crypto. Nothing below it knows about files.
  */
 
-import * as FileSystem from 'expo-file-system';
+import * as FileSystem from 'expo-file-system/legacy';
 import { Result, ok, err } from '../Result';
 import type { ContentError, PackManifest } from './types';
 import { PACK_KEY } from '../../constants/pack';
@@ -98,7 +98,11 @@ export async function installPackFromUrl(
   // 1 — Fetch manifest (unencrypted, tells us what we're about to install)
   let manifest: PackManifest;
   try {
-    const res = await fetch(packUrl.replace(/\.pack$/, '-manifest.json'));
+    const res = await fetch(packUrl.replace(/\.pack$/, '-manifest.json'), {
+      headers: {
+        'Authorization': 'Bearer YOUR_TOKEN_HERE' // Placeholder
+      }
+    });
     if (!res.ok) return err({ kind: 'DOWNLOAD_FAILED', reason: `manifest HTTP ${res.status}` });
     manifest = (await res.json()) as PackManifest;
   } catch (e) {
@@ -108,7 +112,11 @@ export async function installPackFromUrl(
   // 2 — Fetch the encrypted pack
   let packBytes: Uint8Array;
   try {
-    const res = await fetch(packUrl);
+    const res = await fetch(packUrl, {
+      headers: {
+        'Authorization': 'Bearer YOUR_TOKEN_HERE' // Placeholder
+      }
+    });
     if (!res.ok) return err({ kind: 'DOWNLOAD_FAILED', reason: `pack HTTP ${res.status}` });
     packBytes = new Uint8Array(await res.arrayBuffer());
   } catch (e) {

@@ -5,11 +5,15 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "dark",
+    "userInterfaceStyle": "automatic",
     "scheme": "fudami",
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.snonow.fudami"
+      "bundleIdentifier": "com.snonow.fudami",
+      "icon": {
+        "light": "./assets/icon-light.png",
+        "dark": "./assets/icon.png"
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -33,7 +37,10 @@
         }
       ],
       "expo-font",
-      "expo-status-bar"
+      "expo-status-bar",
+      "expo-secure-store",
+      "expo-web-browser",
+      "expo-audio"
     ],
     "experiments": {
       "typedRoutes": true

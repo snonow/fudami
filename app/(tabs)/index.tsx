@@ -7,7 +7,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { generatePath, getXPForNextLevel } from '../../engine';
 import { PathNode } from '../../components/gamification/PathNode';
 import { ProgressBar } from '../../components/ui/ProgressBar';
-import { getDueStudyCards } from '../../data/study/StudyRepository';
+import { StudyRepository } from '../../data';
 import { getWeeklyActivity, getRetentionRate } from '../../db';
 import { AnalyticsHub } from '../../components/ui/AnalyticsHub';
 import { StudyCard } from '../../data/study/types';
@@ -24,7 +24,7 @@ export default function HomeHub() {
 
   useEffect(() => {
     loadUser();
-    getDueStudyCards(100).then(res => res.ok && res.data.length && setCards(res.data));
+    StudyRepository.getDueStudyCards(100).then(res => res.ok && res.data.length && setCards(res.data));
     Promise.all([getWeeklyActivity(), getRetentionRate()]).then(([weekly, rate]) => {
       setAnalytics({ weekly: weekly as any, rate });
     });

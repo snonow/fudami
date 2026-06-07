@@ -1,10 +1,10 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Animated, Pressable, Platform, Image } from 'react-native';
-import { Audio } from 'expo-av';
+import { createAudioPlayer, type AudioPlayer } from 'expo-audio';
 import * as FileSystem from 'expo-file-system/legacy';
 import { useTheme } from '../../context/ThemeContext';
 import { SpeakButton } from '../ui/SpeakButton';
-import { useTts } from '../../hooks/useTts';
+import { useTts } from '../../hooks/audio/useTts';
 
 interface FlashcardProps {
   frontKanji: string;
@@ -22,7 +22,7 @@ export const Flashcard: React.FC<FlashcardProps> = ({ frontKanji, frontKana, bac
   const { colors } = useTheme();
   const { speak, speakWord, state: ttsState } = useTts();
   const animatedValue = useRef(new Animated.Value(0)).current;
-  const [audio, setAudio] = useState<Audio.Sound | null>(null);
+  const [player, setPlayer] = useState<AudioPlayer | null>(null);
 
   // Text to speak = kanji if available, otherwise kana
   const readingText = frontKanji || frontKana;
@@ -52,11 +52,11 @@ export const Flashcard: React.FC<FlashcardProps> = ({ frontKanji, frontKana, bac
 
   useEffect(() => {
     return () => {
-      if (audio) {
-        audio.unloadAsync();
+      if (player) {
+        player.release();
       }
     };
-  }, [audio]);
+  }, [player]);
 
   const playAudio = async (text: string) => {
     const match = text.match(/\[sound:(.*?)\]/);
@@ -66,10 +66,10 @@ export const Flashcard: React.FC<FlashcardProps> = ({ frontKanji, frontKana, bac
     const uri = MEDIA_DIR + filename;
 
     try {
-      if (audio) await audio.unloadAsync();
-      const { sound } = await Audio.Sound.createAsync({ uri });
-      setAudio(sound);
-      await sound.playAsync();
+      if (player) player.release();
+      const newPlayer = createAudioPlayer(uri);
+      setPlayer(newPlayer);
+      newPlayer.play();
     } catch (e) {
       console.warn('Failed to play card audio:', e);
     }
