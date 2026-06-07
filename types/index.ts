@@ -16,7 +16,6 @@ export interface SessionState {
   cards: Card[];
   currentIndex: number;
   mode: ReviewMode;
-  xpEarned: number;
   reviewedCount: number;
   goalValue: number;
   goalType: 'cards' | 'minutes';
@@ -25,8 +24,6 @@ export interface SessionState {
 }
 
 export interface UserState {
-  xpTotal: number;
-  level: number;
   streakDays: number;
   totalReviews: number;
   completedLevels: string[];

@@ -8,19 +8,8 @@ const fsrs = new FSRS(params);
 export const createNewCard = () => createEmptyCard(new Date());
 export const serializeCard = (c: FSRSCard) => JSON.stringify(c);
 export const deserializeCard = (json: string): FSRSCard => { const d = JSON.parse(json); return { ...d, due: new Date(d.due), last_review: d.last_review ? new Date(d.last_review) : undefined }; };
-export const getFsrsRating = (r: number): Rating => [Rating.Again, Rating.Hard, Rating.Good, Rating.Easy][r - 1] || Rating.Good;
+export const getFsrsRating = (r: 'again' | 'good'): Rating => r === 'again' ? Rating.Again : Rating.Good;
 export const scheduleReview = (card: FSRSCard, rating: Rating) => { const res = (fsrs.repeat(card, new Date()) as any)[rating]; return { card: res.card, log: res.log }; };
-
-export const LEVEL_THRESHOLDS = [0, 100, 250, 500, 1000, 2000, 3500, 5000, 7000, 10000];
-export const getLevelFromXP = (xp: number) => {
-  let l = 1; for (let i = 0; i < LEVEL_THRESHOLDS.length; i++) if (xp >= LEVEL_THRESHOLDS[i]) l = i + 1; else break;
-  return xp >= 10000 ? 10 + Math.floor((xp - 10000) / 3000) : l;
-};
-export const getXPForRating = (r: 'again' | 'hard' | 'good' | 'easy', s: number) => Math.round({ again: 0, hard: 5, good: 10, easy: 15 }[r] * (s >= 7 ? 1.2 : 1.0));
-export const getXPForNextLevel = (xp: number) => {
-  const l = getLevelFromXP(xp), cur = LEVEL_THRESHOLDS[l - 1] ?? (10000 + (l - 10) * 3000);
-  return { current: cur, next: LEVEL_THRESHOLDS[l] ?? (cur + 3000), level: l };
-};
 
 export const feedback = {
   playFlip: () => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light),
