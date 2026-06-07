@@ -50,9 +50,9 @@ export default function LandingPage() {
   const fadeAnim = React.useRef(new Animated.Value(0)).current;
   const slideAnim = React.useRef(new Animated.Value(20)).current;
 
-  // Compact mascot size to ensure visibility
+  // Very small mascot size to guarantee everything fits vertically
   const isDesktop = width > 768;
-  const mascotSize = isDesktop ? Math.min(height * 0.3, 350) : Math.min(height * 0.22, width * 0.6);
+  const mascotSize = isDesktop ? 220 : 140;
 
   useEffect(() => {
     // Detect language
@@ -100,7 +100,7 @@ export default function LandingPage() {
         { 
           opacity: fadeAnim, 
           transform: [{ translateY: slideAnim }], 
-          paddingTop: height * 0.02 
+          paddingTop: height * 0.05 
         }
       ]}>
         
@@ -169,7 +169,7 @@ const styles = StyleSheet.create({
   langToggle: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: 'rgba(255,255,255,0.05)', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
   langText: { color: Colors.textMuted, fontSize: 11, fontWeight: '700' },
   content: { flex: 1, alignItems: 'center', justifyContent: 'flex-start', paddingHorizontal: 40 },
-  mascotPodium: { marginBottom: -5 },
+  mascotPodium: { marginBottom: 10 },
   uiStack: { alignItems: 'center', width: '100%', gap: 6 },
   welcomeText: { color: Colors.textMuted, fontSize: 14, fontFamily: 'NotoSansJP_500Medium' },
   logoRow: { flexDirection: 'row', alignItems: 'baseline', gap: 10, marginBottom: 4 },
