@@ -107,9 +107,9 @@ function DarumaModel({ url, mood }: { url: string; mood: MascotMood }) {
     <group ref={groupRef} scale={0.08}>
       <group ref={modelRef}>
         <primitive object={obj} />
-        {/* The "Digital Mask" Sticker */}
-        <mesh position={[0, 0, 1.2]} rotation={[0, 0, 0]}>
-          <planeGeometry args={[12, 12]} />
+        {/* The "Digital Mask" Sticker - Reduced size for trimmed textures */}
+        <mesh position={[0, 0.2, 1.25]} rotation={[0, 0, 0]}>
+          <planeGeometry args={[9, 9]} />
           <meshStandardMaterial 
             map={activeTexture} 
             transparent 
