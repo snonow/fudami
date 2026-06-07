@@ -1,7 +1,7 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Animated, Pressable, Platform, Image } from 'react-native';
 import { Audio } from 'expo-av';
-import * as FileSystem from 'expo-file-system';
+import * as FileSystem from 'expo-file-system/legacy';
 import { useTheme } from '../../context/ThemeContext';
 import { SpeakButton } from '../ui/SpeakButton';
 import { useTts } from '../../hooks/useTts';
