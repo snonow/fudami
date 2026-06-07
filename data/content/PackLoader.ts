@@ -10,7 +10,7 @@
  * Nothing above this module touches crypto. Nothing below it knows about files.
  */
 
-import * as FileSystem from 'expo-file-system';
+import * as FileSystem from 'expo-file-system/legacy';
 import { Result, ok, err } from '../Result';
 import type { ContentError, PackManifest } from './types';
 import { PACK_KEY } from '../../constants/pack';

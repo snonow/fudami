@@ -20,7 +20,7 @@ export const initDb = () => (_initP = _initP || (async () => {
   if (!c?.c) {
     const now = new Date().toISOString(), fsrs = serializeCard(createNewCard());
     await db.withTransactionAsync(async () => {
-      for (const w of vocabN5) await db.runAsync('INSERT OR IGNORE INTO cards (id, type, front_kanji, front_kana, back, level, fsrs_state, due_date, created_at) VALUES (?, "vocab", ?, ?, ?, "n5", ?, ?, ?)', [w.id, w.front_kanji, w.front_kana, w.back, fsrs, now, now]);
+      for (const w of vocabN5) await db.runAsync('INSERT OR IGNORE INTO cards (id, type, front_kanji, front_kana, back, level, fsrs_state, due_date, created_at) VALUES (?, \'vocab\', ?, ?, ?, \'n5\', ?, ?, ?)', [w.id, w.front_kanji, w.front_kana, w.back, fsrs, now, now]);
     });
   }
 })());
