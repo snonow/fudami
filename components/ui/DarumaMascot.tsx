@@ -48,7 +48,6 @@ function DarumaModel({ url, mood }: { url: string; mood: MascotMood }) {
   const activeTexture = useMemo(() => {
     if (mood === 'happy') return isBlinking ? textures.happyBlink : textures.happy;
     if (mood === 'sad') return isBlinking ? textures.sadBlink : textures.sad;
-    // 'thinking' uses bored for now
     return isBlinking ? textures.boredBlink : textures.bored;
   }, [mood, isBlinking, textures]);
 
@@ -150,11 +149,11 @@ export const DarumaMascot = React.memo(function DarumaMascot({ mood = 'bored' }:
 
   return (
     <View style={[styles.container, { width: size, height: size }]}>
-      <Canvas camera={{ position: [0, 0, 5], fov: 40 }} shadows>
-        <ambientLight intensity={0.4} />
-        <pointLight position={[10, 10, 10]} intensity={0.8} />
-        <spotLight position={[-5, 5, 5]} angle={0.2} penumbra={1} intensity={1} />
-        <directionalLight position={[0, 5, 5]} intensity={0.3} />
+      <Canvas camera={{ position: [0, 0, 5], fov: 40 }}>
+        <ambientLight intensity={0.5} />
+        <pointLight position={[10, 10, 10]} intensity={1} />
+        <spotLight position={[-5, 5, 5]} angle={0.2} penumbra={1} intensity={1.5} />
+        <directionalLight position={[0, 5, 5]} intensity={0.4} />
         
         <React.Suspense fallback={null}>
           <DarumaModel url={assets[0].uri} mood={mood} />

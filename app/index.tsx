@@ -52,7 +52,6 @@ export default function LandingPage() {
 
   // Responsive mascot size - BIG on desktop, SMALLER on mobile
   const isDesktop = width > 768;
-  const mascotSize = isDesktop ? Math.min(height * 0.55, 600) : Math.min(height * 0.4, width * 0.85);
 
   useEffect(() => {
     // Detect language
@@ -95,7 +94,10 @@ export default function LandingPage() {
         </Pressable>
       </View>
 
-      <Animated.View style={[styles.content, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
+      <Animated.View style={[
+        styles.content, 
+        { opacity: fadeAnim, transform: [{ translateY: slideAnim }], paddingTop: height * 0.05 }
+      ]}>
         
         {/* Mascot takes center stage - Larger and Responsive */}
         <View style={styles.mascotPodium}>
@@ -161,7 +163,7 @@ const styles = StyleSheet.create({
   topBar: { position: 'absolute', top: 60, right: 30, zIndex: 10 },
   langToggle: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: 'rgba(255,255,255,0.05)', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
   langText: { color: Colors.textMuted, fontSize: 12, fontWeight: '700' },
-  content: { flex: 1, alignItems: 'center', justifyContent: 'flex-start', paddingHorizontal: 40, paddingTop: height * 0.05 },
+  content: { flex: 1, alignItems: 'center', justifyContent: 'flex-start', paddingHorizontal: 40 },
   mascotPodium: { marginBottom: -10 },
   uiStack: { alignItems: 'center', width: '100%', gap: 10 },
   welcomeText: { color: Colors.textMuted, fontSize: 16, fontFamily: 'NotoSansJP_500Medium', marginBottom: 2 },
