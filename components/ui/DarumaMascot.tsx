@@ -151,10 +151,10 @@ export const DarumaMascot = React.memo(function DarumaMascot({ mood = 'bored' }:
   return (
     <View style={[styles.container, { width: size, height: size }]}>
       <Canvas camera={{ position: [0, 0, 5], fov: 40 }} shadows>
-        <ambientLight intensity={0.6} />
-        <pointLight position={[10, 10, 10]} intensity={1.5} />
-        <spotLight position={[-5, 5, 5]} angle={0.2} penumbra={1} intensity={2} />
-        <directionalLight position={[0, 5, 5]} intensity={0.5} />
+        <ambientLight intensity={0.4} />
+        <pointLight position={[10, 10, 10]} intensity={0.8} />
+        <spotLight position={[-5, 5, 5]} angle={0.2} penumbra={1} intensity={1} />
+        <directionalLight position={[0, 5, 5]} intensity={0.3} />
         
         <React.Suspense fallback={null}>
           <DarumaModel url={assets[0].uri} mood={mood} />
