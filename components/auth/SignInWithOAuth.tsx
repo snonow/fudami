@@ -3,7 +3,7 @@ import * as WebBrowser from 'expo-web-browser'
 import { Text, View, Pressable, StyleSheet } from 'react-native'
 import { useOAuth } from '@clerk/clerk-expo'
 import * as Linking from 'expo-linking'
-import { Colors } from '../constants/Colors'
+import { Colors } from '../../constants/Colors'
 
 WebBrowser.maybeCompleteAuthSession()
 

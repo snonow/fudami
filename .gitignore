@@ -6,6 +6,7 @@
 .expo/
 dist/
 web-build/
+GRAPHICS.md
 
 # dependencies
 node_modules/
