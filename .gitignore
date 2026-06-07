@@ -2,6 +2,7 @@
 
 # Expo
 .env.local
+.agents/
 .expo/
 dist/
 web-build/
