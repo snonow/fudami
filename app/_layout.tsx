@@ -34,12 +34,19 @@ export default function RootLayout() {
 
   useEffect(() => {
     async function init() {
-      await Promise.all([
-        initDb(),
-        initContent()
-      ]);
-      await loadUser();
-      setDbReady(true);
+      try {
+        await Promise.all([
+          initDb(),
+          initContent()
+        ]);
+        await loadUser();
+        setDbReady(true);
+      } catch (error) {
+        console.error('[RootLayout] Initialization failed:', error);
+        // On ne bloque pas dbReady indéfiniment en cas d'erreur mineure
+        // ou on laisse l'utilisateur voir que ça a planté ? 
+        // Pour l'instant on log juste.
+      }
     }
     init();
   }, []);
