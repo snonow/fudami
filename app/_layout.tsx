@@ -11,11 +11,11 @@ import { ThemeProvider } from '../context/ThemeContext';
 
 import { 
   useFonts, 
-  NotoSansJP_400Regular, 
-  NotoSansJP_700Bold, 
-  NotoSansJP_500Medium,
-  NotoSansJP_300Light 
-} from '@expo-google-fonts/noto-sans-jp';
+  MPLUSRounded1c_400Regular, 
+  MPLUSRounded1c_700Bold, 
+  MPLUSRounded1c_500Medium,
+  MPLUSRounded1c_300Light 
+} from '@expo-google-fonts/m-plus-rounded-1c';
 import * as SplashScreen from 'expo-splash-screen';
 
 import { ClerkProvider, ClerkLoaded } from '@clerk/clerk-expo';
@@ -33,10 +33,10 @@ SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   const [fontsLoaded] = useFonts({
-    NotoSansJP_400Regular,
-    NotoSansJP_700Bold,
-    NotoSansJP_500Medium,
-    NotoSansJP_300Light,
+    NotoSansJP_400Regular: MPLUSRounded1c_400Regular,
+    NotoSansJP_700Bold: MPLUSRounded1c_700Bold,
+    NotoSansJP_500Medium: MPLUSRounded1c_500Medium,
+    NotoSansJP_300Light: MPLUSRounded1c_300Light,
     'KanjiStroke': require('../assets/fonts/KanjiStrokeOrders.ttf'),
   });
 

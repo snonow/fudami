@@ -12,7 +12,7 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
-import { TtsService, type TtsState } from '../data/audio/TtsService';
+import { TtsService, type TtsState } from '../../data/audio/TtsService';
 
 export interface UseTtsReturn {
   state:      TtsState;
