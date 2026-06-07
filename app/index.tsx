@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, Pressable, Animated, Platform } from 'react-nat
 import { useRouter } from 'expo-router';
 import { Colors } from '../constants/Colors';
 import { SignedIn, SignedOut } from '@clerk/clerk-expo';
-import { SignInWithOAuth } from '../components/SignInWithOAuth';
+import { SignInWithOAuth } from '../components/auth/SignInWithOAuth';
 
 export default function LandingPage() {
   const router = useRouter();

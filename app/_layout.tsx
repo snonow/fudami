@@ -19,7 +19,7 @@ import {
 import * as SplashScreen from 'expo-splash-screen';
 
 import { ClerkProvider, ClerkLoaded } from '@clerk/clerk-expo';
-import { tokenCache } from '../hooks/useTokenCache';
+import { tokenCache } from '../hooks/auth/useTokenCache';
 
 const publishableKey = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY!;
 

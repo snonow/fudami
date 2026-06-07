@@ -4,7 +4,7 @@ import { createAudioPlayer, type AudioPlayer } from 'expo-audio';
 import * as FileSystem from 'expo-file-system/legacy';
 import { useTheme } from '../../context/ThemeContext';
 import { SpeakButton } from '../ui/SpeakButton';
-import { useTts } from '../../hooks/useTts';
+import { useTts } from '../../hooks/audio/useTts';
 
 interface FlashcardProps {
   frontKanji: string;

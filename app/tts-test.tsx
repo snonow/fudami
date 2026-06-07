@@ -18,7 +18,7 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../context/ThemeContext';
 import { SpeakButton } from '../components/ui/SpeakButton';
-import { useTts } from '../hooks/useTts';
+import { useTts } from '../hooks/audio/useTts';
 import { TtsService } from '../data/audio/TtsService';
 
 // ── Seed data (bundled, no network needed) ───────────────────────────────────
