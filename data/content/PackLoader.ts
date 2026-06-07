@@ -192,8 +192,16 @@ export async function installPackFromUrl(
   try {
     await FileSystem.makeDirectoryAsync(SQLITE_DIR, { intermediates: true });
 
-    // expo-file-system writes binary via base64
-    const b64 = btoa(String.fromCharCode(...plaintext));
+    // expo-file-system writes binary via base64. 
+    // We use chunked conversion to avoid "Maximum call stack size exceeded".
+    const CHUNK_SIZE = 8192;
+    let b64 = '';
+    for (let i = 0; i < plaintext.length; i += CHUNK_SIZE) {
+      const chunk = plaintext.subarray(i, i + CHUNK_SIZE);
+      b64 += String.fromCharCode(...chunk);
+    }
+    b64 = btoa(b64);
+
     await FileSystem.writeAsStringAsync(CONTENT_DB_URI, b64, {
       encoding: FileSystem.EncodingType.Base64,
     });

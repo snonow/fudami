@@ -76,7 +76,15 @@ export class AnkiImporter {
 
     for (const [filename, content] of Object.entries(unzipped)) {
       const fileUri = AnkiImporter.TEMP_DIR + filename;
-      await FileSystem.writeAsStringAsync(fileUri, Buffer.from(content).toString('base64'), {
+      const CHUNK_SIZE = 8192;
+      let b64 = '';
+      for (let i = 0; i < content.length; i += CHUNK_SIZE) {
+        const chunk = content.subarray(i, i + CHUNK_SIZE);
+        b64 += String.fromCharCode(...chunk);
+      }
+      b64 = btoa(b64);
+      
+      await FileSystem.writeAsStringAsync(fileUri, b64, {
         encoding: FileSystem.EncodingType.Base64,
       });
     }
