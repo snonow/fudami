@@ -52,7 +52,7 @@ export default function LandingPage() {
 
   // Responsive mascot size - BIG on desktop, SMALLER on mobile
   const isDesktop = width > 768;
-  const mascotSize = isDesktop ? Math.min(height * 0.65, 800) : Math.min(height * 0.45, width * 0.9);
+  const mascotSize = isDesktop ? Math.min(height * 0.55, 600) : Math.min(height * 0.4, width * 0.85);
 
   useEffect(() => {
     // Detect language
@@ -161,16 +161,16 @@ const styles = StyleSheet.create({
   topBar: { position: 'absolute', top: 60, right: 30, zIndex: 10 },
   langToggle: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: 'rgba(255,255,255,0.05)', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
   langText: { color: Colors.textMuted, fontSize: 12, fontWeight: '700' },
-  content: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 40 },
-  mascotPodium: { marginBottom: -20 },
-  uiStack: { alignItems: 'center', width: '100%' },
-  welcomeText: { color: Colors.textMuted, fontSize: 16, fontFamily: 'NotoSansJP_500Medium', marginBottom: 4 },
-  logoRow: { flexDirection: 'row', alignItems: 'baseline', gap: 10, marginBottom: 12 },
+  content: { flex: 1, alignItems: 'center', justifyContent: 'flex-start', paddingHorizontal: 40, paddingTop: height * 0.05 },
+  mascotPodium: { marginBottom: -10 },
+  uiStack: { alignItems: 'center', width: '100%', gap: 10 },
+  welcomeText: { color: Colors.textMuted, fontSize: 16, fontFamily: 'NotoSansJP_500Medium', marginBottom: 2 },
+  logoRow: { flexDirection: 'row', alignItems: 'baseline', gap: 10, marginBottom: 8 },
   kanjiLogo: { fontSize: 72, color: Colors.text, fontFamily: 'NotoSansJP_400Regular' },
   title: { fontSize: 24, color: Colors.secondary, fontFamily: 'NotoSansJP_300Light', letterSpacing: 8, textTransform: 'lowercase' },
-  subtitle: { fontSize: 16, color: Colors.primary, fontFamily: 'NotoSansJP_700Bold', letterSpacing: 1, marginBottom: 40, textAlign: 'center' },
-  principleTitle: { fontSize: 28, color: Colors.text, fontFamily: 'NotoSansJP_700Bold', marginBottom: 16, textAlign: 'center' },
-  principleDesc: { fontSize: 16, color: Colors.textMuted, fontFamily: 'NotoSansJP_400Regular', textAlign: 'center', lineHeight: 24, marginBottom: 40, maxWidth: 300 },
+  subtitle: { fontSize: 16, color: Colors.primary, fontFamily: 'NotoSansJP_700Bold', letterSpacing: 1, marginBottom: 30, textAlign: 'center' },
+  principleTitle: { fontSize: 28, color: Colors.text, fontFamily: 'NotoSansJP_700Bold', marginBottom: 12, textAlign: 'center' },
+  principleDesc: { fontSize: 16, color: Colors.textMuted, fontFamily: 'NotoSansJP_400Regular', textAlign: 'center', lineHeight: 24, marginBottom: 30, maxWidth: 300 },
   primaryBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.primary, paddingVertical: 18, paddingHorizontal: 40, borderRadius: 35, gap: 12, minWidth: 240, elevation: 8, boxShadow: '0 4px 15px rgba(255, 107, 107, 0.3)' },
   primaryBtnText: { color: Colors.white, fontSize: 18, fontWeight: '800', textTransform: 'uppercase', letterSpacing: 1 },
 });
