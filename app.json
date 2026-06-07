@@ -21,17 +21,22 @@
     "web": {
       "bundler": "metro",
       "output": "static",
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/favicon.png",
+      "baseUrl": "/fudami-front"
     },
     "plugins": [
       "expo-sqlite",
-      "expo-router",
+      [
+        "expo-router",
+        {
+          "origin": "https://snonow.github.io/fudami-front/"
+        }
+      ],
       "expo-font",
       "expo-status-bar"
     ],
     "experiments": {
-      "typedRoutes": true,
-      "baseUrl": "/fudami-front"
+      "typedRoutes": true
     }
   }
 }
