@@ -56,7 +56,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   loadSession: async (level) => {
     set({ isLoading: true });
     
-    // On récupère les cartes dues et les nouvelles cartes séparément
+    // Retrieve due cards and new cards separately
     const dueResult = await getDueStudyCards(20);
     const newResult = await getNewStudyCards(level || 'n5', 10);
     

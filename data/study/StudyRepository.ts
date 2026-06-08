@@ -5,19 +5,19 @@ import { Result, ok, err } from '../Result';
 import { ContentError, VocabCard } from '../content/types';
 
 /**
- * Le StudyRepository orchestre la fusion entre :
- * 1. Le Contenu (Pack immuable via ContentRepository)
- * 2. Le Progrès (DB locale fudami.db)
+ * The StudyRepository orchestrates the fusion between:
+ * 1. Content (Immutable Pack via ContentRepository)
+ * 2. Progress (Local DB fudami.db)
  * 
- * Il garantit que le contenu n'est jamais modifié, seul le progrès l'est.
+ * It ensures that the content is never modified, only the progress is.
  */
 
 export async function getDueStudyCards(limit = 20): Promise<Result<StudyCard[], ContentError>> {
   const db = await getDatabase();
   const now = new Date().toISOString();
 
-  // 1. On récupère les IDs et le progrès des cartes dues depuis la DB locale
-  // Note: On inclut les cartes avec reviews existantes (due_date <= now)
+  // 1. Retrieve IDs and progress for due cards from the local DB
+  // Note: We include cards with existing reviews (due_date <= now)
   const rows = await db.getAllAsync<any>(
     `SELECT id, fsrs_state, due_date, created_at 
      FROM cards 
@@ -33,7 +33,7 @@ export async function getDueStudyCards(limit = 20): Promise<Result<StudyCard[], 
 export async function getNewStudyCards(level: string, limit = 10): Promise<Result<StudyCard[], ContentError>> {
   const db = await getDatabase();
   
-  // 1. On récupère les IDs des cartes qui n'ont jamais été révisées
+  // 1. Retrieve IDs for cards that have never been reviewed
   const rows = await db.getAllAsync<any>(
     `SELECT id, fsrs_state, due_date, created_at 
      FROM cards 
@@ -46,7 +46,7 @@ export async function getNewStudyCards(level: string, limit = 10): Promise<Resul
   return joinContentWithProgress(rows);
 }
 
-/** Helper pour fusionner les lignes de progrès avec le contenu du Pack */
+/** Helper to merge progress rows with Pack content */
 async function joinContentWithProgress(progressRows: any[]): Promise<Result<StudyCard[], ContentError>> {
   const studyCards: StudyCard[] = [];
 
@@ -65,8 +65,8 @@ async function joinContentWithProgress(progressRows: any[]): Promise<Result<Stud
         }
       });
     } else {
-      // Si une carte est dans notre DB locale mais absente du pack (ex: pack mis à jour)
-      // On log et on ignore pour l'instant, ou on pourrait la supprimer de la DB locale.
+      // If a card is in our local DB but missing from the pack (e.g., pack updated)
+      // We log and ignore for now, or we could delete it from the local DB.
       console.warn(`[StudyRepository] Content not found for card ${row.id}`);
     }
   }
