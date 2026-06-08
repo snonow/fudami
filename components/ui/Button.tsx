@@ -9,7 +9,7 @@ interface ButtonProps {
   variant?: 'primary' | 'secondary' | 'outline';
   style?: ViewStyle;
   textStyle?: TextStyle;
-  /** Affiche un spinner et désactive le bouton pendant un chargement. */
+  /** Displays a spinner and disables the button during loading. */
   loading?: boolean;
 }
 

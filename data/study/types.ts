@@ -1,8 +1,8 @@
 import { VocabCard } from '../content/types';
 
 /** 
- * État FSRS et données de planification pour une carte.
- * Ces données vivent dans la DB locale de l'utilisateur (fudami.db).
+ * FSRS state and scheduling data for a card.
+ * This data lives in the user's local DB (fudami.db).
  */
 export interface CardProgress {
   id: string;
@@ -12,8 +12,8 @@ export interface CardProgress {
 }
 
 /** 
- * Une StudyCard est l'union du Contenu (du Pack) et du Progrès (de la DB Utilisateur).
- * C'est l'objet "Propre" utilisé par l'UI.
+ * A StudyCard is the union of Content (from the Pack) and Progress (from the User DB).
+ * This is the "Clean" object used by the UI.
  */
 export interface StudyCard {
   id: string;
