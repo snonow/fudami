@@ -1,6 +1,7 @@
 {
   "name": "fudami",
   "version": "1.0.0",
+  "homepage": "https://snonow.github.io/fudami-front/",
   "main": "expo-router/entry",
   "dependencies": {
     "@clerk/clerk-expo": "^2.6.14",
@@ -49,6 +50,7 @@
   },
   "devDependencies": {
     "@react-native/jest-preset": "^0.85.3",
+    "@testing-library/jest-native": "^5.4.3",
     "@testing-library/react-native": "^13.3.3",
     "@types/jest": "29.5.14",
     "@types/react": "~19.2.2",
@@ -63,6 +65,7 @@
     "android": "NODE_OPTIONS=\"--no-strip-types\" expo start --android",
     "ios": "NODE_OPTIONS=\"--no-strip-types\" expo start --ios",
     "web": "NODE_OPTIONS=\"--no-strip-types\" expo start --web",
+    "ios:clean": "rm -rf .expo && npx expo start --ios --clear",
     "test": "jest",
     "test:watch": "jest --watch"
   },
