@@ -10,7 +10,7 @@ permissions:
   pages: write
   id-token: write
 
-# Un seul déploiement à la fois — annule le précédent si un nouveau push arrive
+# Only one deployment at a time — cancels the previous one if a new push arrives
 concurrency:
   group: pages
   cancel-in-progress: true
@@ -35,7 +35,7 @@ jobs:
         run: |
           npm ci || npm ci || npm ci
 
-      # Injecte la clé Clerk depuis GitHub Secrets
+      # Injects the Clerk key from GitHub Secrets
       - name: Inject environment variables
         env:
           CLERK_PUBLISHABLE_KEY: ${{ secrets.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY }}
@@ -44,7 +44,7 @@ jobs:
           echo "EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY=$CLERK_PUBLISHABLE_KEY" > .env.local
           printf 'export const PACK_KEY = "%s";\n' "$FUDAMI_PACK_KEY" > constants/packKey.ts
 
-      # TTS key : null pour le web (fallback sur expo-speech)
+      # TTS key : null for web (fallback on expo-speech)
       - name: Create TTS key placeholder
         run: |
           echo 'export const GOOGLE_TTS_KEY: string | null = null;' > constants/ttsKey.ts
