@@ -28,11 +28,33 @@ export const Flashcard: React.FC<FlashcardProps> = ({ frontKanji, frontKana, bac
   const [displayContent, setDisplayContent] = useState({ frontKanji, frontKana, back });
 
   useEffect(() => {
-    // Only update the visible content when the card is NOT flipped.
-    // This ensures that during the 'unflip' animation of card A, 
-    // we don't accidentally show the data of card B.
-    if (!isFlipped) {
+    // If we are flipping to the front, we start the animation first,
+    // then update content only AFTER the animation completes (handled below).
+    // If we are flipping to the back, we ensure the current card's content is locked.
+    if (isFlipped) {
       setDisplayContent({ frontKanji, frontKana, back });
+    }
+
+    Animated.spring(animatedValue, {
+      toValue: isFlipped ? 1 : 0,
+      friction: 8,
+      tension: 10,
+      useNativeDriver: Platform.OS !== 'web',
+    }).start(({ finished }) => {
+      // Once the 'unflip' animation is done and the card is back at 0 degrees,
+      // we can safely swap in the new card's content.
+      if (finished && !isFlipped) {
+        setDisplayContent({ frontKanji, frontKana, back });
+      }
+    });
+
+    if (isFlipped) {
+      // Play legacy Anki audio if present, else speak via VOICEVOX / TTS
+      if (back.includes('[sound:')) {
+        playAudio(back);
+      } else {
+        handleSpeak();
+      }
     }
   }, [isFlipped, frontKanji, frontKana, back]);
 
@@ -43,24 +65,6 @@ export const Flashcard: React.FC<FlashcardProps> = ({ frontKanji, frontKana, bac
   const handleSpeak = () => wordId
     ? speakWord(wordId, readingText)
     : speak(readingText);
-
-  useEffect(() => {
-    Animated.spring(animatedValue, {
-      toValue: isFlipped ? 1 : 0,
-      friction: 8,
-      tension: 10,
-      useNativeDriver: Platform.OS !== 'web',
-    }).start();
-
-    if (isFlipped) {
-      // Play legacy Anki audio if present, else speak via VOICEVOX / TTS
-      if (displayContent.back.includes('[sound:')) {
-        playAudio(displayContent.back);
-      } else {
-        handleSpeak();
-      }
-    }
-  }, [isFlipped, animatedValue, displayContent.back]);
 
   useEffect(() => {
     return () => {
