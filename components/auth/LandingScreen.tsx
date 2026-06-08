@@ -21,13 +21,13 @@ export const LandingScreen = () => {
       Animated.timing(fadeAnim, {
         toValue: 1,
         duration: 1000,
-        useNativeDriver: true,
+        useNativeDriver: Platform.OS !== 'web' && process.env.NODE_ENV !== 'test',
       }),
       Animated.spring(mascotAnim, {
         toValue: 1,
         tension: 20,
         friction: 7,
-        useNativeDriver: true,
+        useNativeDriver: Platform.OS !== 'web' && process.env.NODE_ENV !== 'test',
       })
     ]).start();
   }, [step]);
