@@ -4,6 +4,24 @@ This document provides technical instructions for deploying the **Open Core** cl
 
 ---
 
+## 🚀 Deployment Workflow: Preview First
+
+To maintain a professional and stable production environment, Fudami follows a **Preview-then-Production** sequence.
+
+### 1. Deploy to Preview (Staging)
+All new features, UI changes, and bug fixes must first be deployed to the **Preview Environment** for verification.
+- **Branch**: `develop`
+- **Trigger**: Push to `develop` or open a PR from a feature branch to `develop`.
+- **URL**: `https://dev.fudami.pages.dev` (Automatically updated by Cloudflare).
+
+### 2. Deploy to Production
+Only after the Preview deployment is verified should the changes be promoted to **Production**.
+- **Branch**: `main`
+- **Trigger**: Merge `develop` into `main`.
+- **URL**: `https://fudami.pages.dev` (The public web app).
+
+---
+
 ## 1. Web Deployment: Cloudflare Pages
 
 The web version of the app is hosted on **Cloudflare Pages**.
