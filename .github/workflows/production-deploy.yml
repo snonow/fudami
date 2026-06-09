@@ -32,6 +32,11 @@ jobs:
           EXPO_PUBLIC_GOOGLE_TTS_KEY: ${{ secrets.EXPO_PUBLIC_GOOGLE_TTS_KEY }}
           EXPO_PUBLIC_FUDAMI_PACK_KEY: ${{ secrets.FUDAMI_PACK_KEY }}
 
+      - name: Prepare dist for Cloudflare
+        run: |
+          cp public/_redirects dist/_redirects || echo "No _redirects to copy"
+          touch dist/.nojekyll
+
       - name: Deploy to Cloudflare Pages (Production)
         uses: cloudflare/pages-action@v1
         with:
