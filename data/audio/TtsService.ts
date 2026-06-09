@@ -27,7 +27,6 @@
 
 import * as Speech from 'expo-speech';
 import { createAudioPlayer, type AudioPlayer } from 'expo-audio';
-import { GOOGLE_TTS_KEY } from '../../constants/ttsKey';
 import { AudioRepository } from './AudioRepository';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -40,6 +39,9 @@ type Listener = (state: TtsState) => void;
 const GOOGLE_TTS_URL = 'https://texttospeech.googleapis.com/v1/text:synthesize';
 const VOICE_NAME     = 'ja-JP-Chirp3-HD-Aoede';
 const SPEAKING_RATE  = 0.85;
+
+// Use environment variable for the Google TTS Key with a safe fallback
+const GOOGLE_TTS_KEY = process.env.EXPO_PUBLIC_GOOGLE_TTS_KEY || null;
 
 // ─── Service ──────────────────────────────────────────────────────────────────
 

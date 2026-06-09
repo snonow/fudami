@@ -10,6 +10,13 @@ export interface VocabCard {
   level: JLPTLevel;
   meanings: string[];        // e.g. ["eat", "to eat (food)"]
   partsOfSpeech: string[];   // e.g. ["v1", "vt"]
+  /**
+   * JMdict nf-frequency band (1–48). 1 = most frequent in news corpus.
+   * NULL means the word isn't covered by JMdict's frequency data.
+   * Use for display ("common word" badge) and learning-queue priority.
+   * Lower number = higher priority. Set by the jmdict_nf Studio provider.
+   */
+  frequencyRank: number | null;
 }
 
 /** A kanji entry from the content pack. */
@@ -19,6 +26,25 @@ export interface KanjiEntry {
   readingsKun: string[];
   readingsOn: string[];
   level: JLPTLevel | null;
+  /**
+   * KanjiVG stroke-order SVG markup (stored as a raw SVG string).
+   * NULL until the kanjivg Studio provider has run.
+   * Render with react-native-svg's SvgXml or a WebView for animations.
+   */
+  strokeOrderSvg: string | null;
+}
+
+/** An image linked to a content node (word, kanji, or sentence). */
+export interface ContentImage {
+  id: string;
+  url: string;
+  captionJa: string | null;
+  /** Japanese keywords / aliases as a JSON array string from the DB. */
+  keywordsJa: string[];
+  source: 'wikidata' | 'stair' | 'dejima';
+  license: string;
+  /** Relevance weight 0–1. 1.0 = perfect match; 0.2 = loose association. */
+  weight: number;
 }
 
 /** An example sentence from Tatoeba, linked to a vocab word. */

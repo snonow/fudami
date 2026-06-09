@@ -11,7 +11,7 @@
  */
 
 import { Result, ok, err } from '../Result';
-import type { VocabCard, KanjiEntry, JLPTLevel, ContentError, PackManifest, Sentence, GrammarPoint } from './types';
+import type { VocabCard, KanjiEntry, JLPTLevel, ContentError, PackManifest, Sentence, GrammarPoint, ContentImage } from './types';
 import {
   queryVocabForLevel,
   queryVocabById,
@@ -22,6 +22,9 @@ import {
   queryGrammarForLevel,
   queryGrammarForWord,
   querySentencesForGrammar,
+  queryImagesForWord,
+  queryImagesForKanji,
+  queryImageForSentence,
   openContentDB,
 } from './ContentDB';
 import { getNextToLearn } from './LearningQueue';
@@ -40,12 +43,13 @@ const SEED = seedRaw as SeedEntry[];
 
 function seedToCard(w: SeedEntry): VocabCard {
   return {
-    id:           w.id,
-    kanji:        w.front_kanji || null,
-    kana:         w.front_kana,
-    level:        'n5',
-    meanings:     [w.back],
+    id:            w.id,
+    kanji:         w.front_kanji || null,
+    kana:          w.front_kana,
+    level:         'n5',
+    meanings:      [w.back],
     partsOfSpeech: [],
+    frequencyRank: null,  // seed has no frequency data
   };
 }
 
@@ -211,6 +215,37 @@ export async function getGrammarSentences(
 ): Promise<Result<Sentence[], ContentError>> {
   if (_source !== 'pack') return ok([]);
   return querySentencesForGrammar(grammarId, limit);
+}
+
+// ─── Image API ───────────────────────────────────────────────────────────────
+
+/**
+ * Best images for a vocabulary word, sorted by relevance weight.
+ * Returns empty array if the images step hasn't run yet or no image was found.
+ */
+export async function getImagesForWord(
+  wordId: string,
+  limit = 3,
+): Promise<Result<ContentImage[], ContentError>> {
+  if (_source !== 'pack') return ok([]);
+  return queryImagesForWord(wordId, limit);
+}
+
+/** Best images for a kanji character (concept illustration). */
+export async function getImagesForKanji(
+  character: string,
+  limit = 2,
+): Promise<Result<ContentImage[], ContentError>> {
+  if (_source !== 'pack') return ok([]);
+  return queryImagesForKanji(character, limit);
+}
+
+/** Best scene image matched to a Tatoeba sentence. Null if none found. */
+export async function getImageForSentence(
+  sentenceId: string,
+): Promise<Result<ContentImage | null, ContentError>> {
+  if (_source !== 'pack') return ok(null);
+  return queryImageForSentence(sentenceId);
 }
 
 // ─── Kanji API ───────────────────────────────────────────────────────────────

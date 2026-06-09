@@ -9,7 +9,7 @@
 
 import * as SQLite from 'expo-sqlite';
 import { Result, ok, err } from '../Result';
-import type { VocabCard, KanjiEntry, JLPTLevel, ContentError, Sentence, LearningNode, GrammarPoint } from './types';
+import type { VocabCard, KanjiEntry, JLPTLevel, ContentError, Sentence, LearningNode, GrammarPoint, ContentImage } from './types';
 import { CONTENT_DB_NAME } from './PackLoader';
 
 let _db: SQLite.SQLiteDatabase | null = null;
@@ -35,7 +35,16 @@ export function closeContentDB(): void {
 
 // ─── Queries ─────────────────────────────────────────────────────────────────
 
-/** Fetch up to `limit` vocab entries for a JLPT level, ordered by frequency. */
+/**
+ * Fetch up to `limit` vocab entries for a JLPT level, ordered by frequency.
+ *
+ * `commonality` is now a JMdict nf-band (1–48, lower = more frequent).
+ * NULLS LAST ensures unranked words follow frequency-ranked ones rather than
+ * appearing first (SQLite default for ASC).
+ *
+ * Glosses come from sense_position=0 only (the primary sense), so the
+ * definition shown is always the most central meaning of the word.
+ */
 export async function queryVocabForLevel(
   level: JLPTLevel,
   limit: number,
@@ -44,15 +53,15 @@ export async function queryVocabForLevel(
   if (!dbResult.ok) return dbResult;
   try {
     const rows = await dbResult.data.getAllAsync<RawVocabRow>(
-      `SELECT w.id, w.kanji, w.kana, w.jlpt_level,
+      `SELECT w.id, w.kanji, w.kana, w.jlpt_level, w.commonality,
               GROUP_CONCAT(DISTINCT s.pos)         AS pos,
               GROUP_CONCAT(g.definition, '||')     AS definitions
        FROM   words  w
-       LEFT JOIN senses  s ON s.word_id  = w.id
+       LEFT JOIN senses  s ON s.word_id  = w.id AND s.sense_position = 0
        LEFT JOIN glosses g ON g.sense_id = s.id AND g.lang = 'eng'
        WHERE  w.jlpt_level = ?
        GROUP  BY w.id
-       ORDER  BY w.commonality ASC
+       ORDER  BY w.commonality ASC NULLS LAST
        LIMIT  ?`,
       [levelToInt(level), limit],
     );
@@ -70,11 +79,11 @@ export async function queryVocabById(
   if (!dbResult.ok) return dbResult;
   try {
     const row = await dbResult.data.getFirstAsync<RawVocabRow>(
-      `SELECT w.id, w.kanji, w.kana, w.jlpt_level,
+      `SELECT w.id, w.kanji, w.kana, w.jlpt_level, w.commonality,
               GROUP_CONCAT(DISTINCT s.pos)         AS pos,
               GROUP_CONCAT(g.definition, '||')     AS definitions
        FROM   words  w
-       LEFT JOIN senses  s ON s.word_id  = w.id
+       LEFT JOIN senses  s ON s.word_id  = w.id AND s.sense_position = 0
        LEFT JOIN glosses g ON g.sense_id = s.id AND g.lang = 'eng'
        WHERE  w.id = ?
        GROUP  BY w.id`,
@@ -97,14 +106,15 @@ export async function queryVocabSearch(
   try {
     const pattern = `${query}%`;
     const rows = await dbResult.data.getAllAsync<RawVocabRow>(
-      `SELECT w.id, w.kanji, w.kana, w.jlpt_level,
+      `SELECT w.id, w.kanji, w.kana, w.jlpt_level, w.commonality,
               GROUP_CONCAT(DISTINCT s.pos)         AS pos,
               GROUP_CONCAT(g.definition, '||')     AS definitions
        FROM   words  w
-       LEFT JOIN senses  s ON s.word_id  = w.id
+       LEFT JOIN senses  s ON s.word_id  = w.id AND s.sense_position = 0
        LEFT JOIN glosses g ON g.sense_id = s.id AND g.lang = 'eng'
        WHERE  (w.kanji LIKE ? OR w.kana LIKE ?)
        GROUP  BY w.id
+       ORDER  BY w.commonality ASC NULLS LAST
        LIMIT  ?`,
       [pattern, pattern, limit],
     );
@@ -127,14 +137,22 @@ export async function queryKanji(
       readings_kun: string;
       readings_on: string;
       jlpt_level: number | null;
-    }>('SELECT * FROM kanji WHERE character = ?', [character]);
+      stroke_order_data: string | null;
+    }>(
+      `SELECT character, meanings, readings_kun, readings_on,
+              jlpt_level, stroke_order_data
+       FROM kanji WHERE character = ?`,
+      [character],
+    );
     if (!row) return err({ kind: 'PACK_NOT_FOUND' });
     return ok({
-      character: row.character,
-      meanings:     splitPipe(row.meanings),
-      readingsKun:  splitPipe(row.readings_kun),
-      readingsOn:   splitPipe(row.readings_on),
-      level: row.jlpt_level ? intToLevel(row.jlpt_level) : null,
+      character:      row.character,
+      meanings:       splitPipe(row.meanings),
+      readingsKun:    splitPipe(row.readings_kun),
+      readingsOn:     splitPipe(row.readings_on),
+      level:          row.jlpt_level ? intToLevel(row.jlpt_level) : null,
+      // Populated by the kanjivg Studio provider; null until then.
+      strokeOrderSvg: row.stroke_order_data ?? null,
     });
   } catch (e) {
     return err({ kind: 'DB_QUERY_FAILED', reason: String(e) });
@@ -149,11 +167,14 @@ export async function querySentencesForVocab(
   const dbResult = await openContentDB();
   if (!dbResult.ok) return dbResult;
   try {
+    // ORDER BY ws.weight DESC: best example sentences (vocab coverage ×
+    // length × JLPT match) surface first. Scored by sentence_weights.py.
     const rows = await dbResult.data.getAllAsync<RawSentenceRow>(
       `SELECT s.id, s.japanese, s.english, s.vocab_ids, s.jlpt_level
        FROM sentences s
        JOIN word_sentences ws ON ws.sentence_id = s.id
        WHERE ws.word_id = ?
+       ORDER BY ws.weight DESC
        LIMIT ?`,
       [wordId, limit],
     );
@@ -226,13 +247,15 @@ export async function queryOrderedVocab(
       ? `AND w.id NOT IN (${excludeIds.map(() => '?').join(',')})`
       : '';
     const params: (string | number)[] = [levelToInt(level), ...excludeIds, limit];
+    // Primary sense only (sense_position=0): avoids GROUP_CONCAT mixing
+    // definitions from multiple senses with different meanings.
     const rows = await dbResult.data.getAllAsync<RawVocabRow>(
-      `SELECT w.id, w.kanji, w.kana, w.jlpt_level,
+      `SELECT w.id, w.kanji, w.kana, w.jlpt_level, w.commonality,
               GROUP_CONCAT(DISTINCT s.pos)         AS pos,
               GROUP_CONCAT(g.definition, '||')     AS definitions
        FROM   learning_order lo
        JOIN   words  w ON w.id = lo.entity_id AND lo.entity_type = 'vocab'
-       LEFT JOIN senses  s ON s.word_id  = w.id
+       LEFT JOIN senses  s ON s.word_id  = w.id AND s.sense_position = 0
        LEFT JOIN glosses g ON g.sense_id = s.id AND g.lang = 'eng'
        WHERE  w.jlpt_level = ? ${placeholders}
        GROUP  BY w.id
@@ -368,6 +391,87 @@ export async function querySentencesForGrammar(
   }
 }
 
+// ─── Image queries ────────────────────────────────────────────────────────────
+
+/**
+ * Fetch the top `limit` images for a vocabulary word, ordered by weight DESC.
+ * Returns an empty array when no images have been linked (images step not run).
+ */
+export async function queryImagesForWord(
+  wordId: string,
+  limit = 3,
+): Promise<Result<ContentImage[], ContentError>> {
+  const dbResult = await openContentDB();
+  if (!dbResult.ok) return dbResult;
+  try {
+    const rows = await dbResult.data.getAllAsync<RawImageRow>(
+      `SELECT i.id, i.url, i.caption_ja, i.keywords_ja, i.source, i.license,
+              wi.weight
+       FROM   word_images wi
+       JOIN   images i ON i.id = wi.image_id
+       WHERE  wi.word_id = ?
+       ORDER  BY wi.weight DESC
+       LIMIT  ?`,
+      [wordId, limit],
+    );
+    return ok(rows.map(rowToImage));
+  } catch (e) {
+    return err({ kind: 'DB_QUERY_FAILED', reason: String(e) });
+  }
+}
+
+/**
+ * Fetch the top `limit` images for a kanji character, ordered by weight DESC.
+ */
+export async function queryImagesForKanji(
+  character: string,
+  limit = 2,
+): Promise<Result<ContentImage[], ContentError>> {
+  const dbResult = await openContentDB();
+  if (!dbResult.ok) return dbResult;
+  try {
+    const rows = await dbResult.data.getAllAsync<RawImageRow>(
+      `SELECT i.id, i.url, i.caption_ja, i.keywords_ja, i.source, i.license,
+              ki.weight
+       FROM   kanji_images ki
+       JOIN   images i ON i.id = ki.image_id
+       WHERE  ki.kanji_char = ?
+       ORDER  BY ki.weight DESC
+       LIMIT  ?`,
+      [character, limit],
+    );
+    return ok(rows.map(rowToImage));
+  } catch (e) {
+    return err({ kind: 'DB_QUERY_FAILED', reason: String(e) });
+  }
+}
+
+/**
+ * Fetch the best image for a sentence (matched by vocabulary overlap via STAIR).
+ * Returns null when no image has been linked.
+ */
+export async function queryImageForSentence(
+  sentenceId: string,
+): Promise<Result<ContentImage | null, ContentError>> {
+  const dbResult = await openContentDB();
+  if (!dbResult.ok) return dbResult;
+  try {
+    const row = await dbResult.data.getFirstAsync<RawImageRow>(
+      `SELECT i.id, i.url, i.caption_ja, i.keywords_ja, i.source, i.license,
+              si.weight
+       FROM   sentence_images si
+       JOIN   images i ON i.id = si.image_id
+       WHERE  si.sentence_id = ?
+       ORDER  BY si.weight DESC
+       LIMIT  1`,
+      [sentenceId],
+    );
+    return ok(row ? rowToImage(row) : null);
+  } catch (e) {
+    return err({ kind: 'DB_QUERY_FAILED', reason: String(e) });
+  }
+}
+
 // ─── Internals ────────────────────────────────────────────────────────────────
 
 interface RawSentenceRow {
@@ -393,8 +497,20 @@ interface RawVocabRow {
   kanji: string | null;
   kana: string;
   jlpt_level: number;
+  /** nf-frequency band 1–48 (1 = most frequent). NULL = not nf-ranked. */
+  commonality: number | null;
   pos: string | null;
   definitions: string | null;
+}
+
+interface RawImageRow {
+  id: string;
+  url: string;
+  caption_ja: string | null;
+  keywords_ja: string | null;   // JSON array string from DB
+  source: string;
+  license: string;
+  weight: number;
 }
 
 interface RawGrammarRow {
@@ -418,11 +534,26 @@ function splitPipe(s: string | null): string[] {
 }
 function rowToVocabCard(row: RawVocabRow): VocabCard {
   return {
-    id:           row.id,
-    kanji:        row.kanji ?? null,
-    kana:         row.kana,
-    level:        intToLevel(row.jlpt_level),
-    meanings:     splitPipe(row.definitions),
+    id:            row.id,
+    kanji:         row.kanji ?? null,
+    kana:          row.kana,
+    level:         intToLevel(row.jlpt_level),
+    meanings:      splitPipe(row.definitions),
     partsOfSpeech: (row.pos ?? '').split(',').filter(Boolean),
+    frequencyRank: row.commonality ?? null,
+  };
+}
+
+function rowToImage(row: RawImageRow): ContentImage {
+  let keywordsJa: string[] = [];
+  try { keywordsJa = JSON.parse(row.keywords_ja ?? '[]'); } catch { /* ignore */ }
+  return {
+    id:         row.id,
+    url:        row.url,
+    captionJa:  row.caption_ja ?? null,
+    keywordsJa,
+    source:     row.source as ContentImage['source'],
+    license:    row.license,
+    weight:     row.weight,
   };
 }
