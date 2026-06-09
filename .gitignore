@@ -32,7 +32,7 @@ expo-env.d.ts
 
 # dependencies
 node_modules/
-package-lock.json
+# package-lock.json (Removed to allow Cloudflare Pages sync)
 
 # Native
 .kotlin/
