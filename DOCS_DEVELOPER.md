@@ -36,18 +36,11 @@ Allows users to import their own `.apkg` decks:
 
 ## Deployment
 
-### GitHub Pages (Web Showroom)
+For detailed instructions on deploying the app to **Web (Cloudflare Pages)**, **iOS (App Store)**, and **Android (Play Store)**, see the [Deployment Guide](./DEPLOYMENT.md).
 
-The app is deployed to GitHub Pages via a GitHub Actions workflow (`.github/workflows/deploy-pages.yml`).
-
-**Mandatory GitHub Secrets:**
-For the production build to work, you MUST configure the following Secrets in your GitHub Repository settings:
-1.  **`EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY`**: Your Clerk production publishable key.
-2.  **`FUDAMI_PACK_KEY`**: The AES-256 hex key used to decrypt the content packs.
-
-**Authentication Setup:**
-- In the **Clerk Dashboard**, ensure you have added your production URL (e.g., `https://snonow.github.io/fudami-front/`) to the **Allowed Redirect URLs** and **Allowed Origins**.
-- The `SignInWithOAuth` component uses `expo-linking` to generate redirect URLs, which are compatible with both mobile schemes and web domains.
+### Quick Checklist:
+- **Environment Variables**: Add `EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY` and `FUDAMI_PACK_KEY` to your CI/CD provider.
+- **Authentication**: Add your production domain to the Clerk Dashboard allowed list.
 
 ## Performance & Memory
 
