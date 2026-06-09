@@ -4,106 +4,64 @@ This document outlines the professional deployment workflows for Web, iOS, and A
 
 ---
 
-## 1. Web Deployment (Recommended: Cloudflare Pages)
+## 1. Web Deployment: Cloudflare Pages (Primary)
 
-While GitHub Pages is a viable free option, **Cloudflare Pages** is the recommended "better way" for Fudami. It offers superior synergy with our Cloudflare Workers backend and handles Single Page Application (SPA) routing loops natively without complex hacks.
+**Cloudflare Pages** is our chosen platform for hosting the Fudami Web App. It is **free** (unlimited bandwidth, 500 builds/month) and serves as a public demonstration of the Fudami interface and core logic.
 
 ### Why Cloudflare Pages?
-- **Synergy**: Use the same dashboard/CLI (Wrangler) as your `fudami-cloud` backend.
-- **SPA Native**: Handles internal routing via a simple `_redirects` file.
-- **Preview Deployments**: Automatic staging URLs for every branch/PR.
-- **Global CDN**: Faster loading times globally.
+- **Synergy**: Managed via the same dashboard as `fudami-cloud`.
+- **SPA Native**: Uses `public/_redirects` to handle client-side routing.
+- **Security**: Environment variables (secrets) are managed in the Cloudflare Dashboard, never in the source code.
 
-### Setup Steps
-1.  **Create Project**: Go to the Cloudflare Dashboard → Workers & Pages → Create application → Pages → Connect to Git.
-2.  **Build Settings**:
-    - **Framework Preset**: None (or React if prompted).
-    - **Build Command**: `npx expo export --platform web` (ensure `fudami-front` is the root).
-    - **Output Directory**: `dist`.
-3.  **Environment Variables**: Add `EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY` in the Cloudflare dashboard.
-4.  **Fix SPA Routing**: To prevent the 404 infinite loop mentioned in our docs, create a file at `fudami-front/public/_redirects` (or ensure it's copied to `dist`) with this content:
-    ```text
-    /* /index.html 200
-    ```
-    This tells Cloudflare to serve `index.html` for any path, allowing Expo Router to handle the URL on the client side.
+### Deployment Source
+- **Repository**: `fudami-front` (Main branch).
+- **Build Command**: `npx expo export --platform web`
+- **Output Directory**: `dist`
+- **SPA Routing Fix**: The `public/_redirects` file automatically serves `index.html` for all paths, preventing infinite loops.
 
 ---
 
-## 2. iOS Deployment (EAS)
+## 2. Management Platform: Expo & EAS
 
-iOS deployment requires an **Apple Developer Program** membership and a macOS machine (or use Expo's cloud builders).
+For unified management of all deployment sources, we use the **[Expo Dashboard](https://expo.dev/dashboard)**.
 
-### Workflow: EAS Build & Submit
-Expo Application Services (EAS) is the standard way to build and submit Expo apps.
-
-1.  **Install EAS CLI**:
-    ```bash
-    npm install -g eas-cli
-    ```
-2.  **Configure Project**:
-    ```bash
-    eas build:configure
-    ```
-3.  **Run Production Build**:
-    ```bash
-    eas build --platform ios --profile production
-    ```
-    *This will generate a `.ipa` file in the Expo cloud.*
-4.  **Submit to App Store**:
-    ```bash
-    eas submit --platform ios
-    ```
-    *This uploads your build to TestFlight for internal testing or final App Store Review.*
-
-### Key iOS Specifics:
-- **Bundle Identifier**: Ensure `com.snonow.fudami` is registered in your Apple Developer portal.
-- **Provisioning**: EAS handles automatic provisioning (creating certificates and profiles) for you.
+### Features:
+- **Build History**: Track every iOS and Android build.
+- **EAS Submit**: Monitor the status of App Store and Play Store submissions.
+- **EAS Update**: Manage over-the-air (OTA) deployments to all devices simultaneously.
+- **Orbit**: A macOS/Windows menu bar app to quickly install and launch builds on simulators or physical devices.
 
 ---
 
-## 3. Android Deployment (EAS)
+## 3. Mobile Deployment (iOS & Android)
 
-Android deployment requires a **Google Play Console** account (one-time $25 fee).
+Mobile deployment assets and metadata are organized in the `deploy/` directory:
+- **iOS**: See `deploy/ios/README.md` for App Store Connect requirements.
+- **Android**: See `deploy/android/README.md` for Google Play Console requirements.
 
-### Workflow: EAS Build & Submit
-1.  **Run Production Build**:
-    ```bash
-    eas build --platform android --profile production
-    ```
-    *This generates an `.aab` (Android App Bundle), which is the optimized format for Google Play.*
-2.  **Submit to Play Store**:
-    ```bash
-    eas submit --platform android
-    ```
-
-### For Direct APK Distribution:
-If you want to send a test file directly to someone without using the Play Store:
-1.  Create a `preview` profile in `eas.json` with `"buildType": "apk"`.
-2.  Run:
-    ```bash
-    eas build --platform android --profile preview
-    ```
+### Workflow Summary:
+1.  **Build**: `eas build --platform all` (Runs in the cloud).
+2.  **Verify**: Test the generated builds via the Expo Dashboard.
+3.  **Submit**: `eas submit --platform all` (Sends to Apple/Google).
 
 ---
 
-## 4. Over-the-Air (OTA) Updates
+## 4. Security & Open-Source Philosophy
 
-Fudami supports OTA updates using **EAS Update**. This allows you to push bug fixes and UI changes directly to users without them having to download a new version from the App Store or Play Store.
+The `fudami-front` repository is an **Open-Source Demo**. It showcases the UI, the 3D mascot, and the SRS engine.
 
-### Setup:
-1.  **Install the library**: `npx expo install expo-updates`.
-2.  **Publish an Update**:
-    ```bash
-    eas update --branch production --message "Fixing redirect loop"
-    ```
-    *The app will automatically check for and download this update the next time it starts.*
+### Critical Security Rules:
+1.  **Zero Secrets in VCS**: Never commit real keys. `constants/packKey.ts` and `.env.local` are strictly gitignored.
+2.  **Demo Mode**: When deploying to the web, the app should be configured to use a "Public Demo" content pack.
+3.  **Credential Management**: Real business secrets (API keys for voice services, production DB credentials) live exclusively in **GitHub Secrets**, **Cloudflare Environment Variables**, or **EAS Secrets**.
 
 ---
 
 ## Summary Table
 
-| Platform | Recommended Host | Tooling | Auth Requirement |
+| Platform | Host / Manager | Tooling | Cost |
 | --- | --- | --- | --- |
-| **Web** | Cloudflare Pages | `npx expo export` | None (Public) |
-| **iOS** | Apple App Store | EAS Build/Submit | Apple Developer ($99/yr) |
-| **Android** | Google Play Store | EAS Build/Submit | Google Play Console ($25) |
+| **Web** | Cloudflare Pages | `npx expo export` | **Free Tier** |
+| **iOS** | Apple App Store | EAS Build/Submit | $99/year |
+| **Android** | Google Play Store | EAS Build/Submit | $25 (Once) |
+| **Unified** | **Expo Dashboard** | EAS CLI | Free/Usage based |
