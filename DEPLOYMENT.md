@@ -1,39 +1,26 @@
-# Fudami Deployment Guide
+# Fudami Client App Deployment (fudami-front)
 
-This document outlines the professional deployment workflows for Web, iOS, and Android versions of Fudami.
+This document provides technical instructions for deploying the **Open Core** client application. For a high-level overview of the entire Fudami business infrastructure, see the **[Master Deployment Documentation](../DEPLOYMENT_MASTER.md)**.
 
 ---
 
-## 1. Web Deployment: Cloudflare Pages (Primary)
+## 1. Web Deployment: Cloudflare Pages
 
-**Cloudflare Pages** is our chosen platform for hosting the Fudami Web App. It is **free** (unlimited bandwidth, 500 builds/month) and serves as a public demonstration of the Fudami interface and core logic.
+The web version of the app is hosted on **Cloudflare Pages**.
 
-### Why Cloudflare Pages?
-- **Synergy**: Managed via the same dashboard as `fudami-cloud`.
-- **SPA Native**: Uses `public/_redirects` to handle client-side routing.
-- **Security**: Environment variables (secrets) are managed in the Cloudflare Dashboard, never in the source code.
-
-### Deployment Source
-- **Repository**: `fudami-front` (Main branch).
+### Configuration:
+- **Project Type**: Static Site
 - **Build Command**: `npx expo export --platform web`
 - **Output Directory**: `dist`
-- **SPA Routing Fix**: The `public/_redirects` file automatically serves `index.html` for all paths, preventing infinite loops.
+- **SPA Routing**: The `public/_redirects` file is automatically used to handle client-side routing.
+
+### Environment Variables (Required in Cloudflare Dashboard):
+- `EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY`: Clerk Public Key.
+- `FUDAMI_PACK_KEY`: (Injected via CI) AES-256 key for content packs.
 
 ---
 
-## 2. Management Platform: Expo & EAS
-
-For unified management of all deployment sources, we use the **[Expo Dashboard](https://expo.dev/dashboard)**.
-
-### Features:
-- **Build History**: Track every iOS and Android build.
-- **EAS Submit**: Monitor the status of App Store and Play Store submissions.
-- **EAS Update**: Manage over-the-air (OTA) deployments to all devices simultaneously.
-- **Orbit**: A macOS/Windows menu bar app to quickly install and launch builds on simulators or physical devices.
-
----
-
-## 3. Mobile Deployment (iOS & Android)
+## 2. Mobile Deployment (iOS & Android)
 
 Mobile deployment assets and metadata are organized in the `deploy/` directory:
 - **iOS**: See `deploy/ios/README.md` for App Store Connect requirements.
@@ -43,6 +30,18 @@ Mobile deployment assets and metadata are organized in the `deploy/` directory:
 1.  **Build**: `eas build --platform all` (Runs in the cloud).
 2.  **Verify**: Test the generated builds via the Expo Dashboard.
 3.  **Submit**: `eas submit --platform all` (Sends to Apple/Google).
+
+---
+
+## 3. Management Platform: Expo & EAS
+
+For unified management of all deployment sources, we use the **[Expo Dashboard](https://expo.dev/dashboard)**.
+
+### Features:
+- **Build History**: Track every iOS and Android build.
+- **EAS Submit**: Monitor the status of App Store and Play Store submissions.
+- **EAS Update**: Manage over-the-air (OTA) deployments to all devices simultaneously.
+- **Orbit**: A macOS/Windows menu bar app to quickly install and launch builds on simulators or physical devices.
 
 ---
 

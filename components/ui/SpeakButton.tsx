@@ -8,7 +8,7 @@
  *
  * Usage:
  *   const { speak, state } = useTts();
- *   <SpeakButton text="食べる" state={state} onPress={() => speak('食べる')} />
+ *   <SpeakButton text="ふだみ" state={state} onPress={() => speak('ふだみ')} />
  */
 
 import React, { useEffect, useRef } from 'react';

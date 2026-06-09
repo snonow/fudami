@@ -2,13 +2,19 @@
 
 fudami is a modern, cross-platform language learning application built with React Native and Expo. It leverages the FSRS (Free Spaced Repetition Scheduler) algorithm to optimize memory retention, currently focusing on Japanese vocabulary.
 
-## Features
+## Architecture & Open Core
 
-- **Cross-Platform:** Runs on iOS, Android, and the Web using Expo Router.
-- **Smart Reviews:** Uses `ts-fsrs` for advanced spaced repetition scheduling. See the [SRS Documentation](../DOCS_SRS.md) for more details.
-- **Developer Guide:** Detailed technical documentation is available in [DOCS_DEVELOPER.md](./DOCS_DEVELOPER.md).
-- **Interactive UI:** Smooth 3D flashcard flip animations and a clean, dark-themed dashboard.
-- **Progress Tracking:** Gamified elements including XP, streaks, and daily goals.
+This repository contains the **Open Core** client for the Fudami platform. It is a specialized Japanese learning "Player" designed to be highly interactive and offline-first.
+
+**Important Note:** To protect business intellectual property, this client does not bundle proprietary language content. It is designed to fetch encrypted content packs from the Fudami backend.
+
+For a complete overview of the Fudami business infrastructure and how to deploy this client, please refer to the:
+👉 **[Fudami Master Deployment & Architecture Documentation](../DEPLOYMENT_MASTER.md)**
+
+## Features
+- **Cross-Platform:** Runs on iOS, Android, and Web (Cloudflare Pages).
+- **3D Interactive Learning:** Immersive flashcards with Daruma mascot feedback.
+- **FSRS-Powered:** Advanced memory retention logic (open implementation).
 
 ## Tech Stack
 
