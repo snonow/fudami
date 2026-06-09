@@ -9,16 +9,15 @@ This document provides technical instructions for deploying the **Open Core** cl
 To maintain a professional and stable production environment, Fudami follows a **Preview-then-Production** sequence.
 
 ### 1. Deploy to Preview (Staging)
-All new features, UI changes, and bug fixes must first be deployed to the **Preview Environment** for verification.
-- **Branch**: `develop`
-- **Trigger**: Push to `develop` or open a PR from a feature branch to `develop`.
-- **URL**: `https://dev.fudami.pages.dev` (Automatically updated by Cloudflare).
+All new features must be verified in the **Preview Environment**.
+- **URL**: `https://dev.fudami.pages.dev`
+- **Trigger**: Automatic push to `develop`.
 
-### 2. Deploy to Production
-Only after the Preview deployment is verified should the changes be promoted to **Production**.
-- **Branch**: `main`
-- **Trigger**: Merge `develop` into `main`.
-- **URL**: `https://fudami.pages.dev` (The public web app).
+### 2. Ship to Production (The Gateway)
+Production is protected and **never** deploys automatically from Git pushes. It uses a **GitHub Action Gateway** to ensure only verified code is shipped.
+- **URL**: `https://fudami.pages.dev`
+- **Trigger**: Push/Merge into `main`.
+- **Safety Gate**: The workflow automatically runs **tests** and **builds** the app. If any step fails, the production site is NOT updated.
 
 ---
 
