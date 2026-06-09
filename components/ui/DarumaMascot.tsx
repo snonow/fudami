@@ -1,6 +1,6 @@
 import React, { useRef, useMemo, useState, useEffect } from 'react';
 import { Canvas, useFrame, useLoader } from '@react-three/fiber/native';
-import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader';
+import { OBJLoader } from 'three-stdlib';
 import { useTexture } from '@react-three/drei/native';
 import { View, StyleSheet, ActivityIndicator, useWindowDimensions } from 'react-native';
 import { Asset, useAssets } from 'expo-asset';
