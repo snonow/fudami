@@ -43,18 +43,24 @@ export default function RootLayout() {
   useEffect(() => {
     async function init() {
       try {
-        await Promise.all([
-          initDb(),
-          initContent()
+        const timeout = new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error('init timeout: database worker did not respond')), 10_000)
+        );
+        await Promise.race([
+          Promise.all([initDb(), initContent()]),
+          timeout,
         ]);
         await loadUser();
         setDbReady(true);
       } catch (error) {
         console.error('[RootLayout] Initialization failed:', error);
+        const msg = String(error);
         setInitError(
-          String(error).includes('worker') || String(error).includes('database')
-            ? 'Database access denied. If you are in Private/Incognito mode, please use a standard window.'
-            : 'Initialization failed. Please refresh the page.'
+          msg.includes('SharedArrayBuffer') || msg.includes('crossOriginIsolated')
+            ? 'Browser security isolation is missing. Please hard-refresh (Cmd/Ctrl+Shift+R).'
+            : msg.includes('worker') || msg.includes('database') || msg.includes('timeout')
+              ? 'Database access denied. If you are in Private/Incognito mode, please use a standard window.'
+              : 'Initialization failed. Please refresh the page.'
         );
       }
     }
