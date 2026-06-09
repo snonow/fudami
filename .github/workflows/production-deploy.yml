@@ -30,6 +30,7 @@ jobs:
         env:
           EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY }}
           EXPO_PUBLIC_GOOGLE_TTS_KEY: ${{ secrets.EXPO_PUBLIC_GOOGLE_TTS_KEY }}
+          EXPO_PUBLIC_FUDAMI_PACK_KEY: ${{ secrets.FUDAMI_PACK_KEY }}
 
       - name: Deploy to Cloudflare Pages (Production)
         uses: cloudflare/pages-action@v1

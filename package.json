@@ -1,7 +1,7 @@
 {
   "name": "fudami",
   "version": "1.0.0",
-  "homepage": "https://snonow.github.io/fudami-front/",
+  "homepage": "https://fudami.pages.dev/",
   "main": "expo-router/entry",
   "dependencies": {
     "@clerk/clerk-expo": "^2.19.31",
