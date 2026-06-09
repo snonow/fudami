@@ -14,8 +14,7 @@
  *                  Then set EXPO_PUBLIC_API_URL=http://localhost:8765 in .env.local.
  */
 
-// Use environment variable for the AES-256 key (hex) with a safe fallback
-export const PACK_KEY = process.env.EXPO_PUBLIC_FUDAMI_PACK_KEY || null;
+export { PACK_KEY } from './packKey';
 
 const _apiUrl = process.env.EXPO_PUBLIC_API_URL;
 
