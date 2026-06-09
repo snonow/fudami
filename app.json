@@ -26,14 +26,14 @@
       "bundler": "metro",
       "output": "static",
       "favicon": "./assets/favicon.png",
-      "baseUrl": "/fudami-front"
+      "baseUrl": ""
     },
     "plugins": [
       "expo-sqlite",
       [
         "expo-router",
         {
-          "origin": "https://snonow.github.io/fudami-front/"
+          "origin": "https://fudami.pages.dev"
         }
       ],
       "expo-font",
