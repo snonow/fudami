@@ -1,3 +1,5 @@
+// EXPO_PUBLIC_GOOGLE_TTS_KEY is set in jest.setup.env.js so that the cloud
+// path is active when babel-preset-expo inlines env vars at transform time.
 import { TtsService } from '../../../data/audio/TtsService';
 import * as Speech from 'expo-speech';
 import { createAudioPlayer } from 'expo-audio';
@@ -21,11 +23,6 @@ jest.mock('../../../data/audio/AudioRepository', () => ({
     wordUri: jest.fn(),
     sentenceUri: jest.fn(),
   },
-}));
-
-// Mock constants/ttsKey
-jest.mock('../../../constants/ttsKey', () => ({
-  GOOGLE_TTS_KEY: 'mock-key',
 }));
 
 // Mock global fetch for Cloud TTS

@@ -28,6 +28,12 @@ jest.mock('three', () => ({
   Vector3: jest.fn(),
 }));
 
+// three-stdlib pulls heavy loaders that extend three's Loader class at module-eval
+// time. We only need OBJLoader as a typed identifier in the component under test.
+jest.mock('three-stdlib', () => ({
+  OBJLoader: class {},
+}));
+
 describe('DarumaMascot', () => {
   it('renders correctly after assets load', () => {
     const { getByTestId } = render(<DarumaMascot />);

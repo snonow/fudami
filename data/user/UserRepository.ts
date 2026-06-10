@@ -11,8 +11,6 @@
 import { Result, ok, err } from '../Result';
 import {
   getUserProgress,
-  addXPAndReview,
-  updateStreak,
   getWeeklyActivity,
   getRetentionRate,
   getDueCards,
@@ -40,15 +38,9 @@ export async function getProgress(): Promise<Result<UserState>> {
   catch (e) { return err(`getProgress: ${e}`); }
 }
 
-export async function addXP(xp: number): Promise<Result<UserState>> {
-  try { return ok(await addXPAndReview(xp)); }
-  catch (e) { return err(`addXP: ${e}`); }
-}
-
-export async function refreshStreak(): Promise<Result<number>> {
-  try { return ok(await updateStreak()); }
-  catch (e) { return err(`refreshStreak: ${e}`); }
-}
+// XP / streak counters are computed server-side from fact_review (see
+// /SEMANTIC_MODEL.md). The previous `addXP` and `refreshStreak` exports
+// were removed: clients no longer mutate aggregates locally.
 
 export async function getWeeklyStats(): Promise<Result<{ day: string; count: number }[]>> {
   try { return ok(await getWeeklyActivity()); }
@@ -88,10 +80,10 @@ export async function recordReview(
   cardId: string,
   rating: number,
   mode: string,
-  xpEarned: number,
+  durationMs: number,
 ): Promise<Result<void>> {
   try {
-    await insertReview(cardId, rating, mode, xpEarned);
+    await insertReview(cardId, rating, mode, durationMs);
     return ok(undefined);
   } catch (e) {
     return err(`recordReview: ${e}`);

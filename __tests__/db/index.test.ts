@@ -1,16 +1,26 @@
-import { getDatabase, getUserProgress, updateStreak } from '../../db';
+import { getDatabase, getUserProgress, writeProgressSnapshot } from '../../db';
 
 describe('Database Layer', () => {
-  it('should return default user progress when DB is empty', async () => {
+  it('returns empty progress snapshot on a fresh DB', async () => {
     const progress = await getUserProgress();
-    expect(progress.xpTotal).toBe(0);
-    expect(progress.level).toBe(1);
-    expect(progress.streakDays).toBe(0);
+    expect(Array.isArray(progress.progress)).toBe(true);
+    expect(progress.streak.days).toBe(0);
+    // XP / level scalars must not leak back into the client shape.
+    expect((progress as any).xpTotal).toBeUndefined();
+    expect((progress as any).level).toBeUndefined();
   });
 
-  it('should update streak correctly', async () => {
-    const streak = await updateStreak();
-    expect(typeof streak).toBe('number');
+  it('round-trips a server progress snapshot through the local cache', async () => {
+    await writeProgressSnapshot({
+      progress: [
+        { level_id: 'n5', skill_id: 'vocab', mastered_units: 12, total_units: 100,
+          mastery_ratio: 0.12, last_review_at: '2026-06-10T12:00:00Z' },
+      ],
+      streak: { days: 3, last_review_at: '2026-06-10T12:00:00Z' },
+    });
+    const back = await getUserProgress();
+    expect(back.progress[0]).toMatchObject({ level_id: 'n5', skill_id: 'vocab', mastered_units: 12 });
+    expect(back.streak.days).toBe(3);
   });
 
   it('should get a database connection', async () => {

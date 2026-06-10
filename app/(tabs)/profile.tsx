@@ -10,6 +10,7 @@ import { ankiImporter } from '../../engine/AnkiImporter';
 
 import { getPackManifest, refreshPack } from '../../data/content/ContentRepository';
 import { PackManifest, contentErrorMessage } from '../../data/content/types';
+import type { LevelId, SkillId, UserState } from '../../types';
 
 export default function ProfileScreen() {
   const { user, session } = useAppStore();
@@ -59,19 +60,28 @@ export default function ProfileScreen() {
             <Text style={[styles.avatarT, { color: colors.teal }]}>U</Text>
           </View>
           <Text style={[styles.name, { color: colors.text }]}>User</Text>
-          <Text style={[styles.lvl, { color: colors.teal }]}>Level {user.level}</Text>
+          {/* Highest level with any mastery is the "current" level shown beside the name. */}
+          <Text style={[styles.lvl, { color: colors.teal }]}>{currentLevelLabel(user)}</Text>
         </View>
 
-        <Text style={[styles.title, { color: colors.text }]}>Statistics</Text>
-        <View style={{ gap: 12, marginBottom: 30 }}>
+        <Text style={[styles.title, { color: colors.text }]}>Streak</Text>
+        <View style={{ gap: 12, marginBottom: 24 }}>
           <View style={{ flexDirection: 'row', gap: 12 }}>
-            <StatCard label="Total XP" value={user.xpTotal} icon="star" iconColor="#FFD54F" />
-            <StatCard label="Streak" value={`${user.streakDays} d`} icon="flame" iconColor="#FF5252" />
+            <StatCard label="Streak" value={`${user.streak.days} d`} icon="flame" iconColor="#FF5252" />
+            <StatCard label="Mastered" value={totalMastered(user)} icon="ribbon" iconColor={colors.success} />
           </View>
-          <View style={{ flexDirection: 'row', gap: 12 }}>
-            <StatCard label="Reviews" value={user.totalReviews} icon="albums-outline" iconColor={colors.teal} />
-            <StatCard label="Level" value={user.level} icon="trending-up" iconColor={colors.success} />
-          </View>
+        </View>
+
+        <Text style={[styles.title, { color: colors.text }]}>Progress by skill</Text>
+        <View style={{ gap: 8, marginBottom: 30 }}>
+          {SKILL_ORDER.map(skill => (
+            <SkillRow key={skill} skill={skill} user={user} accent={colors.teal} text={colors.text} muted={colors.textMuted} />
+          ))}
+          {user.progress.length === 0 && (
+            <Text style={[styles.sub, { color: colors.textMuted, padding: 8 }]}>
+              Sync with the gateway to see your progress matrix.
+            </Text>
+          )}
         </View>
 
         <Text style={[styles.title, { color: colors.text }]}>Content Pack</Text>
@@ -122,6 +132,69 @@ export default function ProfileScreen() {
         </View>
       </ScrollView>
     </SafeAreaView>
+  );
+}
+
+// ─── Progress helpers (see /SEMANTIC_MODEL.md) ───────────────────────────────
+
+const SKILL_ORDER: SkillId[] = ['vocab', 'kanji', 'grammar', 'reading', 'listening', 'writing', 'speaking'];
+const LEVEL_ORDER: LevelId[] = ['n5', 'n4', 'n3', 'n2', 'n1'];
+const SKILL_LABEL: Record<SkillId, string> = {
+  vocab:     'Vocabulary',
+  kanji:     'Kanji',
+  grammar:   'Grammar',
+  reading:   'Reading',
+  listening: 'Listening',
+  writing:   'Writing',
+  speaking:  'Speaking',
+};
+const LEVEL_LABEL: Record<LevelId, string> = {
+  n5: 'Beginner (N5)',
+  n4: 'Elementary (N4)',
+  n3: 'Intermediate (N3)',
+  n2: 'Upper-Int. (N2)',
+  n1: 'Advanced (N1)',
+};
+
+function totalMastered(user: UserState): number {
+  return user.progress.reduce((acc, p) => acc + p.mastered_units, 0);
+}
+
+function currentLevelLabel(user: UserState): string {
+  // Highest level with any non-zero mastery.
+  for (let i = LEVEL_ORDER.length - 1; i >= 0; i--) {
+    const lvl = LEVEL_ORDER[i];
+    if (user.progress.some(p => p.level_id === lvl && p.mastered_units > 0)) {
+      return LEVEL_LABEL[lvl];
+    }
+  }
+  return LEVEL_LABEL.n5;
+}
+
+function SkillRow({ skill, user, accent, text, muted }: {
+  skill: SkillId; user: UserState; accent: string; text: string; muted: string;
+}) {
+  // Per-skill mastery summed across all levels — what you see on the profile.
+  let mastered = 0, total = 0, lastReview: string | null = null;
+  for (const p of user.progress) {
+    if (p.skill_id !== skill) continue;
+    mastered += p.mastered_units;
+    total    += p.total_units;
+    if (p.last_review_at && (!lastReview || p.last_review_at > lastReview)) {
+      lastReview = p.last_review_at;
+    }
+  }
+  const ratio = total > 0 ? mastered / total : 0;
+  return (
+    <View style={{ paddingHorizontal: 12, paddingVertical: 10, borderRadius: 12, backgroundColor: 'rgba(128,128,128,0.06)' }}>
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 }}>
+        <Text style={{ color: text, fontWeight: '600' }}>{SKILL_LABEL[skill]}</Text>
+        <Text style={{ color: muted, fontSize: 12 }}>{mastered} / {total || '—'}</Text>
+      </View>
+      <View style={{ height: 6, borderRadius: 3, backgroundColor: 'rgba(128,128,128,0.18)', overflow: 'hidden' }}>
+        <View style={{ width: `${Math.round(ratio * 100)}%`, height: '100%', backgroundColor: accent }} />
+      </View>
+    </View>
   );
 }
 

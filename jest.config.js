@@ -3,6 +3,7 @@ module.exports = {
   transformIgnorePatterns: [
     'node_modules/(?!((jest-)?react-native|@react-native(-community)?)|expo(nent)?|@expo(nent)?/.*|@expo-google-fonts/.*|react-navigation|@react-navigation/.*|@sentry/react-native|native-base|react-native-svg|three)',
   ],
+  setupFiles: ['<rootDir>/jest.setup.env.js'],
   setupFilesAfterEnv: ['@testing-library/jest-native/extend-expect'],
   moduleNameMapper: {
     '^three/examples/jsm/loaders/OBJLoader$': '<rootDir>/__mocks__/OBJLoader.js',

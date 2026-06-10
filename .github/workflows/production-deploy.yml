@@ -38,12 +38,12 @@ jobs:
           cp public/_headers   dist/_headers   || echo "No _headers to copy"
           touch dist/.nojekyll
 
+      # cloudflare/pages-action@v1 was archived in 2024; wrangler-action is the
+      # supported replacement. `pages deploy` with --branch=main pushes to the
+      # production environment of the `fudami` Pages project.
       - name: Deploy to Cloudflare Pages (Production)
-        uses: cloudflare/pages-action@v1
+        uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          projectName: fudami
-          directory: dist
-          # Force production environment
-          branch: main
+          command: pages deploy dist --project-name=fudami --branch=main

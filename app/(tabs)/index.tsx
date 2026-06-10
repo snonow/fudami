@@ -40,7 +40,19 @@ export default function HomeHub() {
   const dailyGoal = 50; // Mock goal
   const dailyProgress = Math.min((analytics.weekly[analytics.weekly.length - 1] as any)?.count / dailyGoal, 1) || 0;
 
-  const path = generatePath('JLPT N5', cards, user?.completedLevels ?? []);
+  // A level is "completed" when its overall mastery ratio across all skills >= 0.9.
+  // Derived from the server-snapshot progress matrix; never stored client-side.
+  const completedLevels = (() => {
+    const byLevel = new Map<string, { mastered: number; total: number }>();
+    for (const p of user?.progress ?? []) {
+      const acc = byLevel.get(p.level_id) ?? { mastered: 0, total: 0 };
+      acc.mastered += p.mastered_units;
+      acc.total    += p.total_units;
+      byLevel.set(p.level_id, acc);
+    }
+    return [...byLevel].filter(([, v]) => v.total > 0 && v.mastered / v.total >= 0.9).map(([k]) => k);
+  })();
+  const path = generatePath('JLPT N5', cards, completedLevels);
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
@@ -51,7 +63,7 @@ export default function HomeHub() {
           <View>
             <Text style={[styles.greeting, { color: colors.text }]}>Good morning!</Text>
             <Text style={[styles.streakText, { color: colors.palette.softHankoRed }]}>
-              <Ionicons name="flame" size={16} /> {user.streakDays} day streak
+              <Ionicons name="flame" size={16} /> {user.streak.days} day streak
             </Text>
           </View>
           <Pressable onPress={toggleTheme} style={styles.themeToggle}>

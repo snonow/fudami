@@ -2,8 +2,16 @@ import { create } from 'zustand';
 import { ReviewMode, SessionState, UserState } from '../types';
 import { StudyCard } from '../data/study/types';
 import { getDueStudyCards, getNewStudyCards } from '../data/study/StudyRepository';
-import { updateCardFsrs, insertReview, getUserProgress, incrementReviews, updateStreak } from '../db';
+import {
+  updateCardFsrs,
+  insertReview,
+  getUserProgress,
+  pendingReviewEvents,
+  ackReviewEvents,
+  writeProgressSnapshot,
+} from '../db';
 import { scheduleReview, getFsrsRating, deserializeCard, serializeCard, createNewCard } from '../engine';
+import { WORKER_URL } from '../constants/pack';
 
 interface AppSessionState extends Omit<SessionState, 'cards'> {
   cards: StudyCard[];
@@ -19,27 +27,51 @@ interface AppState {
   startSession: (cards: StudyCard[], type: 'cards' | 'minutes', goal: number) => void;
 }
 
-const API_BASE = "https://fudami-gateway.your-subdomain.workers.dev"; // TODO: Update after deployment
-
-async function backgroundSync(user: UserState, token?: string) {
+/**
+ * Drain the local review outbox to the gateway. The server is authoritative —
+ * we send only events and overwrite the local progress snapshot with whatever
+ * the server returns. See /SEMANTIC_MODEL.md §4.
+ */
+async function syncReviews(token?: string): Promise<void> {
   if (!token) return;
+  const events = await pendingReviewEvents(200);
+  if (events.length === 0) return;
   try {
-    fetch(`${API_BASE}/user/sync`, {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify(user)
-    }).catch(e => console.warn('[Sync] Background push failed:', e));
+    const res = await fetch(`${WORKER_URL}/user/reviews`, {
+      method:  'POST',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body:    JSON.stringify({
+        events: events.map(e => ({
+          client_event_id: e.client_event_id,
+          unit_id:         e.unit_id,
+          rating:          e.rating,
+          duration_ms:     e.duration_ms,
+          reviewed_at:     e.reviewed_at,
+          mastered_now:    e.mastered_now === 1,
+        })),
+      }),
+    });
+    if (!res.ok) {
+      console.warn('[Sync] gateway returned', res.status);
+      return;
+    }
+    const snapshot = await res.json() as {
+      progress: UserState['progress'];
+      streak:   UserState['streak'];
+    };
+    await writeProgressSnapshot(snapshot);
+    await ackReviewEvents(events.map(e => e.client_event_id));
   } catch (e) {
-    // Silent fail for background sync
+    console.warn('[Sync] failed:', e);
   }
 }
 
-const DEF_S: AppSessionState = { 
-  isActive: false, cards: [], currentIndex: 0, mode: 'flip', 
-  reviewedCount: 0, goalType: 'cards', goalValue: 0, progress: 0, 
-  lastModeByCardId: {}, cardStartTime: 0 
+const DEF_S: AppSessionState = {
+  isActive: false, cards: [], currentIndex: 0, mode: 'flip',
+  reviewedCount: 0, goalType: 'cards', goalValue: 0, progress: 0,
+  lastModeByCardId: {}, cardStartTime: 0
 };
-const DEF_U: UserState = { streakDays: 0, totalReviews: 0, completedLevels: [] };
+const DEF_U: UserState = { progress: [], streak: { days: 0, last_review_at: null } };
 
 const pickMode = (last?: ReviewMode): ReviewMode => {
   const w: Record<ReviewMode, number> = { flip: 0.4, mcq: 0.35, typing: 0.25 };
@@ -65,21 +97,19 @@ export const useAppStore = create<AppState>((set, get) => ({
       ...(newResult.ok ? newResult.data : [])
     ].slice(0, 20);
 
-    const streak = await updateStreak();
-    if (!cards.length) return set({ isLoading: false, user: { ...get().user, streakDays: streak } });
+    if (!cards.length) return set({ isLoading: false });
     const m = pickMode();
-    set({ 
-      isLoading: false, 
-      user: { ...get().user, streakDays: streak }, 
-      session: { 
-        ...DEF_S, isActive: true, cards, goalValue: cards.length, 
+    set({
+      isLoading: false,
+      session: {
+        ...DEF_S, isActive: true, cards, goalValue: cards.length,
         mode: m, lastModeByCardId: { [cards[0].id]: m },
-        cardStartTime: Date.now() 
-      } 
+        cardStartTime: Date.now()
+      }
     });
   },
   gradeCard: async (r, token) => {
-    const { session, user } = get();
+    const { session } = get();
     const card = session.cards[session.currentIndex];
     if (!card) return;
 
@@ -87,30 +117,32 @@ export const useAppStore = create<AppState>((set, get) => ({
     const fsrsState = card.progress.fsrs_state;
     const res = scheduleReview(fsrsState ? deserializeCard(fsrsState) : createNewCard(), getFsrsRating(r));
     const sState = serializeCard(res.card), due = res.card.due.toISOString();
-    
+
+    // FSRS stability ≥ 21d is our operational definition of mastery
+    // (see /SEMANTIC_MODEL.md §2.2 — mastered_now is a monotonic forward signal).
+    const masteredNow = res.card.stability >= 21;
+
     await updateCardFsrs(card.id, sState, due);
-    await insertReview(card.id, r === 'again' ? 1 : 3, session.mode, duration);
-    await incrementReviews();
-    
+    await insertReview(card.id, r === 'again' ? 1 : 3, session.mode, duration, { masteredNow });
+
     const nextIdx = session.currentIndex + 1, revCount = session.reviewedCount + 1;
     let cards = [...session.cards];
     if (r === 'again') {
-      cards.splice(Math.min(nextIdx + 3, cards.length), 0, { 
-        ...card, 
-        progress: { ...card.progress, fsrs_state: sState, due_date: due } 
+      cards.splice(Math.min(nextIdx + 3, cards.length), 0, {
+        ...card,
+        progress: { ...card.progress, fsrs_state: sState, due_date: due }
       });
     }
 
-    const newUser = await getUserProgress();
-    // Trigger background sync (silent)
-    backgroundSync(newUser, token);
+    // Drain the outbox to the gateway; the response is the authoritative
+    // progress snapshot. Falls back to the local cache on offline / 4xx / 5xx.
+    syncReviews(token).then(async () => set({ user: await getUserProgress() }));
 
     const nextCard = cards[nextIdx], nextM = nextCard ? pickMode(session.lastModeByCardId[nextCard.id]) : session.mode;
-    set({ 
-      user: { ...newUser, completedLevels: user.completedLevels }, 
-      session: { 
-        ...session, cards, currentIndex: nextIdx, reviewedCount: revCount, 
-        isActive: nextIdx < cards.length, progress: Math.min(revCount / session.goalValue, 1), 
+    set({
+      session: {
+        ...session, cards, currentIndex: nextIdx, reviewedCount: revCount,
+        isActive: nextIdx < cards.length, progress: Math.min(revCount / session.goalValue, 1),
         mode: nextM, lastModeByCardId: nextCard ? { ...session.lastModeByCardId, [nextCard.id]: nextM } : session.lastModeByCardId,
         cardStartTime: Date.now()
       } 
